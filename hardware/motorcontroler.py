@@ -1,5 +1,7 @@
+#%%
 import serial
 from positiondecode import PositionDecode
+import struct
 
 
 class MySerialForMotor:
@@ -12,6 +14,8 @@ class MySerialForMotor:
             self.ser.open()
 
     def write_speed(self, forwardspeed, rollspeed):
+        forwardspeed = float(forwardspeed)
+        rollspeed = float(rollspeed)
         bytes_seq = bytes.fromhex('ff') + \
                         struct.pack('<f', forwardspeed) + \
                         struct.pack('<f', rollspeed) + \
@@ -24,11 +28,17 @@ class MySerialForMotor:
         else:
             print('Please open serial first.')
 
+    def __del__(self):
+        self.close()
+
     def open(self):
-        self.ser.open()
+        if not self.ser.is_open:
+            self.ser.open()
 
     def close(self):
-        self.ser.close()
-
+        if self.ser.is_open:
+            self.ser.close()
+#%%
 if __name__ == '__main__':
-    motor = MySerialForMotor()
+    motor = MySerialForMotor('/dev/ttyTHS2', 115200)
+    motor.write_speed(1.2, 1.2)
