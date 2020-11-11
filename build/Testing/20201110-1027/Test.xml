@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Site BuildName="Linux-g++-7"
+	BuildStamp="20201110-1027-Experimental"
+	Name="0e0933a2e0b9"
+	Generator="ctest-3.10.2"
+	CompilerName="/usr/bin/g++-7"
+	CompilerVersion="7.4.0"
+	OSName="Linux"
+	Hostname="0e0933a2e0b9"
+	OSRelease="5.4.0-52-generic"
+	OSVersion="#57~18.04.1-Ubuntu SMP Thu Oct 15 14:04:49 UTC 2020"
+	OSPlatform="x86_64"
+	Is64Bits="1"
+	VendorString="GenuineIntel"
+	VendorID="Intel Corporation"
+	FamilyID="6"
+	ModelID="79"
+	ProcessorCacheSize="10240"
+	NumberOfLogicalCPU="8"
+	NumberOfPhysicalCPU="4"
+	TotalVirtualMemory="2047"
+	TotalPhysicalMemory="15934"
+	LogicalProcessorsPerPhysical="2"
+	ProcessorClockFrequency="1850.66"
+	>
+	<Testing>
+		<StartDateTime>Nov 10 10:28 UTC</StartDateTime>
+		<StartTestTime>1605004111</StartTestTime>
+		<TestList/>
+		<EndDateTime>Nov 10 10:28 UTC</EndDateTime>
+		<EndTestTime>1605004111</EndTestTime>
+		<ElapsedMinutes>0</ElapsedMinutes>
+	</Testing>
+</Site>
