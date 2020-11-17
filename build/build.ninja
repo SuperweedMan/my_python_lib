@@ -59,6 +59,35 @@ build CMakeFiles/package.util: CUSTOM_COMMAND all
   pool = console
   restat = 1
 build package: phony CMakeFiles/package.util
+# =============================================================================
+# Object build statements for EXECUTABLE target rvalue
+
+
+#############################################
+# Order-only phony target for rvalue
+
+build cmake_object_order_depends_target_rvalue: phony
+build CMakeFiles/rvalue.dir/c++extention/practices/rvalue_semantics.cpp.o: CXX_COMPILER__rvalue ../c++extention/practices/rvalue_semantics.cpp || cmake_object_order_depends_target_rvalue
+  DEP_FILE = CMakeFiles/rvalue.dir/c++extention/practices/rvalue_semantics.cpp.o.d
+  FLAGS = -g
+  OBJECT_DIR = CMakeFiles/rvalue.dir
+  OBJECT_FILE_DIR = CMakeFiles/rvalue.dir/c++extention/practices
+
+# =============================================================================
+# Link build statements for EXECUTABLE target rvalue
+
+
+#############################################
+# Link the executable rvalue
+
+build rvalue: CXX_EXECUTABLE_LINKER__rvalue CMakeFiles/rvalue.dir/c++extention/practices/rvalue_semantics.cpp.o
+  FLAGS = -g
+  LINK_FLAGS = -rdynamic
+  OBJECT_DIR = CMakeFiles/rvalue.dir
+  POST_BUILD = :
+  PRE_LINK = :
+  TARGET_FILE = rvalue
+  TARGET_PDB = rvalue.dbg
 
 #############################################
 # Utility command for ContinuousSubmit
@@ -212,35 +241,6 @@ build ContinuousStart: phony CMakeFiles/ContinuousStart
 # Utility command for NightlySubmit
 
 build NightlySubmit: phony CMakeFiles/NightlySubmit
-# =============================================================================
-# Object build statements for EXECUTABLE target another
-
-
-#############################################
-# Order-only phony target for another
-
-build cmake_object_order_depends_target_another: phony
-build CMakeFiles/another.dir/c++extention/test.cpp.o: CXX_COMPILER__another ../c++extention/test.cpp || cmake_object_order_depends_target_another
-  DEP_FILE = CMakeFiles/another.dir/c++extention/test.cpp.o.d
-  FLAGS = -g
-  OBJECT_DIR = CMakeFiles/another.dir
-  OBJECT_FILE_DIR = CMakeFiles/another.dir/c++extention
-
-# =============================================================================
-# Link build statements for EXECUTABLE target another
-
-
-#############################################
-# Link the executable another
-
-build another: CXX_EXECUTABLE_LINKER__another CMakeFiles/another.dir/c++extention/test.cpp.o
-  FLAGS = -g
-  LINK_FLAGS = -rdynamic
-  OBJECT_DIR = CMakeFiles/another.dir
-  POST_BUILD = :
-  PRE_LINK = :
-  TARGET_FILE = another
-  TARGET_PDB = another.dbg
 
 #############################################
 # Utility command for ContinuousCoverage
@@ -491,7 +491,7 @@ build CMakeFiles/ExperimentalBuild: CUSTOM_COMMAND
 #############################################
 # The main all target.
 
-build all: phony c++extention another
+build all: phony rvalue c++extention
 
 #############################################
 # Make the all target the default.

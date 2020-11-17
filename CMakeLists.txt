@@ -5,7 +5,7 @@ include(CTest)
 enable_testing()
 
 add_executable(c++extention main.cpp)
-add_executable(another c++extention/test.cpp)
+add_executable(rvalue c++extention/practices/rvalue_semantics.cpp)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})

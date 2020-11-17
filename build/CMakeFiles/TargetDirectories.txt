@@ -1,6 +1,7 @@
 /root/my_libs/build/CMakeFiles/rebuild_cache.dir
 /root/my_libs/build/CMakeFiles/test.dir
 /root/my_libs/build/CMakeFiles/package.dir
+/root/my_libs/build/CMakeFiles/rvalue.dir
 /root/my_libs/build/CMakeFiles/ContinuousSubmit.dir
 /root/my_libs/build/CMakeFiles/ContinuousMemCheck.dir
 /root/my_libs/build/CMakeFiles/ContinuousConfigure.dir
@@ -25,7 +26,6 @@
 /root/my_libs/build/CMakeFiles/NightlyMemCheck.dir
 /root/my_libs/build/CMakeFiles/ContinuousStart.dir
 /root/my_libs/build/CMakeFiles/NightlySubmit.dir
-/root/my_libs/build/CMakeFiles/another.dir
 /root/my_libs/build/CMakeFiles/ContinuousCoverage.dir
 /root/my_libs/build/CMakeFiles/Nightly.dir
 /root/my_libs/build/CMakeFiles/NightlyConfigure.dir
