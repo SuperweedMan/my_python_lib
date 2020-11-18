@@ -1,0 +1,7 @@
+[
+{
+  "directory": "/root/my_libs/c++extention/build",
+  "command": "/usr/bin/g++-7    -g   -o CMakeFiles/c++extention.dir/main.cpp.o -c /root/my_libs/c++extention/main.cpp",
+  "file": "/root/my_libs/c++extention/main.cpp"
+}
+]
