@@ -63,7 +63,7 @@ class CocoDataset(Dataset):
         self.img_ids = list(np.delete(img_ids, index))
         self.image_transform = image_transform
         self.target_transform = target_transform
-id()        self.image_path = image_path
+        self.image_path = image_path
 
     def __getitem__(self, idx):
         img_id = self.img_ids[idx]

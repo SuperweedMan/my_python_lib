@@ -119,22 +119,6 @@ class KTTIDataset(Dataset):
 def collate_to_list(batch):
     return list(zip(*batch))
 
-# class AnnsToTensor:
-#     '''
-#     将values转换为tensor
-#     '''
-#     def __init__(self, name=[]):
-#         self.name_list = name
-
-#     def __call__(self, anns):
-#         targets = {}
-#         for name in anns.keys():
-#             if name in self.name_list:
-#                 targets[name] = torch.tensor(anns[name])
-#             else:
-#                 targets[name] = anns[name]
-#         return targets
-
 class CropAnns:
     def __init__(self, name=[]):
         self.name = name

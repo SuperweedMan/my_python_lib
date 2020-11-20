@@ -35,3 +35,4 @@ class SaliencyMap:
 #%%
 if __name__ == '__main__':
     # SaliencyMap()
+    pass

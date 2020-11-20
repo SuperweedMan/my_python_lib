@@ -4,6 +4,7 @@ Misc functions, including distributed helpers.
 
 Mostly copy-paste from torchvision references.
 """
+#%%
 import os
 import subprocess
 import time
@@ -465,3 +466,12 @@ def interpolate(input, size=None, scale_factor=None, mode="nearest", align_corne
         return _new_empty_tensor(input, output_shape)
     else:
         return torchvision.ops.misc.interpolate(input, size, scale_factor, mode, align_corners)
+
+#%%
+if __name__ =='__main__':
+    x = [
+        torch.rand(3, 500, 600),
+        torch.rand(3, 580, 700),
+        torch.rand(3, 400, 800)
+    ]
+    x = nested_tensor_from_tensor_list(x)

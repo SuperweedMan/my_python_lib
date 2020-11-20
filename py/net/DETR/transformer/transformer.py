@@ -5,6 +5,7 @@ classes:
 """
 import copy
 from typing import Optional, List
+from easydict import EasyDict
 
 import torch
 import torch.nn.functional as F
@@ -299,3 +300,20 @@ def _get_activation_fn(activation):
     if activation == "glu":
         return F.glu
     raise RuntimeError(F"activation should be relu/gelu, not {activation}.")
+
+#%%
+def build_DETR_transformer(args, **kwargs):
+    if isinstance(args, (EasyDict, dict)):
+        return DETRTransformer(**args)
+    else:
+        return Transformer(
+        **kwargs
+        # d_model=args.hidden_dim,
+        # dropout=args.dropout,
+        # nhead=args.nheads,
+        # dim_feedforward=args.dim_feedforward,
+        # num_encoder_layers=args.enc_layers,
+        # num_decoder_layers=args.dec_layers,
+        # normalize_before=args.pre_norm,
+        # return_intermediate_dec=True,
+        )
