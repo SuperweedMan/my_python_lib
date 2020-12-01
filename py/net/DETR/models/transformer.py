@@ -1,37 +1,26 @@
-#%%
+# Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
 """
-classes:
-    DETRTransformer: 
+DETR Transformer class.
+
+Copy-paste from torch.nn.Transformer with modifications:
+    * positional encodings are passed in MHattention
+    * extra LN at the end of encoder is removed
+    * decoder returns a stack of activations from all decoding layers
 """
 import copy
 from typing import Optional, List
-from easydict import EasyDict
 
 import torch
 import torch.nn.functional as F
 from torch import nn, Tensor
 
-#%%
-class DETRTransformer(nn.Module):
-    """
-    创建专用于DETR的Transformer
-    """
+
+class Transformer(nn.Module):
+
     def __init__(self, d_model=512, nhead=8, num_encoder_layers=6,
                  num_decoder_layers=6, dim_feedforward=2048, dropout=0.1,
                  activation="relu", normalize_before=False,
                  return_intermediate_dec=False):
-        """
-        input: 
-            d_model: dimension of model
-            nhead: number of muti-head
-            num_encoder_layers: number of sub encode layers that a encoder contains.
-            num_decoder_layers: number of sub decode layers that a decoder contains.
-            dim_feedforward: dimension of feedworad layers in sub (encode or decode) layers.
-            dropout: param of dropout layers.
-            activation: categories of activation function.
-            normailze_before: 
-            return_intermediate_dec: 
-        """
         super().__init__()
 
         encoder_layer = TransformerEncoderLayer(d_model, nhead, dim_feedforward,
@@ -58,26 +47,20 @@ class DETRTransformer(nn.Module):
     def forward(self, src, mask, query_embed, pos_embed):
         # flatten NxCxHxW to HWxNxC
         bs, c, h, w = src.shape
-        # -> (H*W, N, C)
         src = src.flatten(2).permute(2, 0, 1)
-        # -> (H*W, N, C)
         pos_embed = pos_embed.flatten(2).permute(2, 0, 1)
-        # (max_objs, C) -> (max_objs, N, C)
         query_embed = query_embed.unsqueeze(1).repeat(1, bs, 1)
-        
         mask = mask.flatten(1)
 
         tgt = torch.zeros_like(query_embed)
         memory = self.encoder(src, src_key_padding_mask=mask, pos=pos_embed)
-
         hs = self.decoder(tgt, memory, memory_key_padding_mask=mask,
                           pos=pos_embed, query_pos=query_embed)
         return hs.transpose(1, 2), memory.permute(1, 2, 0).view(bs, c, h, w)
 
+
 class TransformerEncoder(nn.Module):
-    """
-    the whole encoder cotains several sub encoder layers.
-    """
+
     def __init__(self, encoder_layer, num_layers, norm=None):
         super().__init__()
         self.layers = _get_clones(encoder_layer, num_layers)
@@ -142,9 +125,7 @@ class TransformerDecoder(nn.Module):
 
 
 class TransformerEncoderLayer(nn.Module):
-    """
-    sub Encoder layer in encoder.
-    """
+
     def __init__(self, d_model, nhead, dim_feedforward=2048, dropout=0.1,
                  activation="relu", normalize_before=False):
         super().__init__()
@@ -172,7 +153,7 @@ class TransformerEncoderLayer(nn.Module):
                      pos: Optional[Tensor] = None):
         q = k = self.with_pos_embed(src, pos)
         src2 = self.self_attn(q, k, value=src, attn_mask=src_mask,
-                              key_padding_mask=src_key_padding_mask)[0]  # [1] 是注意力权重
+                              key_padding_mask=src_key_padding_mask)[0]
         src = src + self.dropout1(src2)
         src = self.norm1(src)
         src2 = self.linear2(self.dropout(self.activation(self.linear1(src))))
@@ -291,19 +272,9 @@ class TransformerDecoderLayer(nn.Module):
 def _get_clones(module, N):
     return nn.ModuleList([copy.deepcopy(module) for i in range(N)])
 
-def _get_activation_fn(activation):
-    """Return an activation function given a string"""
-    if activation == "relu":
-        return F.relu
-    if activation == "gelu":
-        return F.gelu
-    if activation == "glu":
-        return F.glu
-    raise RuntimeError(F"activation should be relu/gelu, not {activation}.")
 
-#%%
-def build_DETR_transformer(args, **kwargs):
-    return DETRTransformer(
+def build_transformer(args):
+    return Transformer(
         d_model=args.hidden_dim,
         dropout=args.dropout,
         nhead=args.nheads,
@@ -313,3 +284,14 @@ def build_DETR_transformer(args, **kwargs):
         normalize_before=args.pre_norm,
         return_intermediate_dec=True,
     )
+
+
+def _get_activation_fn(activation):
+    """Return an activation function given a string"""
+    if activation == "relu":
+        return F.relu
+    if activation == "gelu":
+        return F.gelu
+    if activation == "glu":
+        return F.glu
+    raise RuntimeError(F"activation should be relu/gelu, not {activation}.")

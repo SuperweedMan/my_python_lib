@@ -42,7 +42,7 @@ class KTTIDataset(Dataset):
     创建一个KTTI dataset
     """
     type_id =  ['Car', 'Cyclist', 'Misc', 'Pedestrian', 'Person', 'Tram', 'Truck', 'Van'] 
-    def __init__(self, path, img_path, return_frame=True, exclusive_raws={}, exclusive_cats=[], img_transformer=None, target_transformer=None):
+    def __init__(self, path, img_path, return_frame=True,  exclusive_raws={}, exclusive_cats=[], img_transformer=None, target_transformer=None, transformers=None):
         """
         input:
             path: <string> path of label files(*.txt).
@@ -61,8 +61,8 @@ class KTTIDataset(Dataset):
         self.target_transformer = target_transformer
         if 'type' in exclusive_raws:
             for item in exclusive_raws['type']:
-                if item in type_id:
-                    type_id.remove(item)
+                if item in KTTIDataset.type_id:
+                    KTTIDataset.type_id.remove(item)
         for fragment in all_targets:
             targets = []
             for frame in sorted(set(all_targets[fragment]['frame'])):
@@ -76,19 +76,13 @@ class KTTIDataset(Dataset):
                 label_dict.pop('bbox_3')
                 label_dict['frame'] = frame
                 label_dict['fragment'] = fragment
-                label_dict['labels'] = [type_id.index(t) for t in label_dict['type']]
+                label_dict['labels'] = [KTTIDataset.type_id.index(t) for t in label_dict['type']]
                 targets.append(label_dict)
             self.all_targets_dict[fragment] = targets
         self.num = [len(v) for k, v in self.all_targets_dict.items()]
         if return_frame is True:
             self.all_targets_dict = [v for k, v in self.all_targets_dict.items()]
             self.all_targets_dict = [x for l in self.all_targets_dict for x in l]
-    
-    def type_id(self):
-        """
-        return a list contains sorted types.
-        """
-        return type_id
 
     def __getitem__(self, idx):
         """

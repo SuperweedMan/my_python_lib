@@ -1,0 +1,51 @@
+{
+
+    "position_embedding": "v2",
+
+    "dilation": false, 
+    "hidden_dim": 256,
+
+    "dropout": 0.1,
+
+    "dim_feedforward": 2048,
+    "enc_layers": 6,
+    "dec_layers": 6,
+
+    "dataset_file": "coco",
+
+
+    "giou_loss_coef": 2,
+    "eos_coef": 0.1,
+    "device": "cuda",
+
+    "aux_loss": true, 
+    "backbone": "resnet50", 
+    "batch_size": 1,
+    "bbox_loss_coef": 5,
+    "clip_max_norm": 0.1, 
+
+    "coco_path": "/share/data", 
+    "dist_url": "env://", 
+    "distributed": false,
+    "eval": false, 
+
+    "lr": 0.0001, 
+    "lr_backbone": 1e-05, 
+    "lr_drop": 200, 
+    "mask_loss_coef": 1, 
+    "masks": false, 
+    "nheads": 8, 
+    "num_queries" :100, 
+    "num_workers": 0,
+    "output_dir": "", 
+    "pre_norm": false, 
+    "remove_difficult": false, 
+    "resume": "/share/data/detr-r50-e632da11.pth", 
+    "seed": 42, 
+    "set_cost_bbox": 5, 
+    "set_cost_class": 1, 
+    "set_cost_giou": 2, 
+    "start_epoch":0, 
+    "weight_decay": 0.0001, 
+    "world_size": 1
+}

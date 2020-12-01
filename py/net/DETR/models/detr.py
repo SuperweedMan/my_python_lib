@@ -2,20 +2,23 @@
 """
 DETR model and criterion classes.
 """
+#%%
 import torch
 import torch.nn.functional as F
 from torch import nn
 
-from util import box_ops
-from misc import (NestedTensor, nested_tensor_from_tensor_list,
+from .util import box_ops
+from .util.misc import (NestedTensor, nested_tensor_from_tensor_list,
                        accuracy, get_world_size, interpolate,
                        is_dist_avail_and_initialized)
 
-from backbone import build_backbone
-from matcher import build_matcher
-# from .segmentation import (DETRsegm, PostProcessPanoptic, PostProcessSegm,
-#                            dice_loss, sigmoid_focal_loss)
-from transformer import build_DETR_transformer
+from .backbone import build_backbone
+from .matcher import build_matcher
+from .segmentation import (DETRsegm, PostProcessPanoptic, PostProcessSegm,
+                           dice_loss, sigmoid_focal_loss)
+from .transformer import build_transformer
+
+
 
 
 class DETR(nn.Module):
@@ -112,8 +115,8 @@ class SetCriterion(nn.Module):
         assert 'pred_logits' in outputs
         src_logits = outputs['pred_logits']
 
-        idx = self._get_src_permutation_idx(indices)
-        target_classes_o = torch.cat([t["labels"][J] for t, (_, J) in zip(targets, indices)])
+        idx = self._get_src_permutation_idx(indices)  # 返回一个tuple(object的batch index， object的query index)
+        target_classes_o = torch.cat([t["labels"][J] for t, (_, J) in zip(targets, indices)])  # 当前batch中所有匹配的GT所属的类别
         target_classes = torch.full(src_logits.shape[:2], self.num_classes,
                                     dtype=torch.int64, device=src_logits.device)
         target_classes[idx] = target_classes_o
@@ -147,8 +150,8 @@ class SetCriterion(nn.Module):
         """
         assert 'pred_boxes' in outputs
         idx = self._get_src_permutation_idx(indices)
-        src_boxes = outputs['pred_boxes'][idx]
-        target_boxes = torch.cat([t['boxes'][i] for t, (_, i) in zip(targets, indices)], dim=0)
+        src_boxes = outputs['pred_boxes'][idx]  # 所有batch里面的boxes
+        target_boxes = torch.cat([t['boxes'][i] for t, (_, i) in zip(targets, indices)], dim=0)  # 读取targetboxes  
 
         loss_bbox = F.l1_loss(src_boxes, target_boxes, reduction='none')
 
@@ -357,3 +360,8 @@ def build(args):
             postprocessors["panoptic"] = PostProcessPanoptic(is_thing_map, threshold=0.85)
 
     return model, criterion, postprocessors
+
+# %%
+if __name__ == "__main__":
+    from py.net.DETR.config import CONFIG
+    model, cirterion, postprocessors = build(CONFIG)

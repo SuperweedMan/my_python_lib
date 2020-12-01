@@ -1,8 +1,7 @@
+# Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
 """
 Backbone modules.
 """
-#%%
-import easydict
 from collections import OrderedDict
 
 import torch
@@ -11,11 +10,11 @@ import torchvision
 from torch import nn
 from torchvision.models._utils import IntermediateLayerGetter
 from typing import Dict, List
-from py.net.DETR.backbone.position_encoding import build_position_encoding
-from py.net.DETR.misc import  NestedTensor, is_main_process
 
+from .util.misc import NestedTensor, is_main_process
 
-#%%
+from .position_encoding import build_position_encoding
+
 
 class FrozenBatchNorm2d(torch.nn.Module):
     """
@@ -110,9 +109,7 @@ class Joiner(nn.Sequential):
         return out, pos
 
 
-def build_backbone(args=easydict.EasyDict({'lr_backbone': 1, 'masks':False, 'position_embedding': 'v3',
-                            'backbone': 'resnet50', 'dilation': True, 'hidden_dim': 256,
-    })):
+def build_backbone(args):
     position_embedding = build_position_encoding(args)
     train_backbone = args.lr_backbone > 0
     return_interm_layers = args.masks
@@ -120,22 +117,3 @@ def build_backbone(args=easydict.EasyDict({'lr_backbone': 1, 'masks':False, 'pos
     model = Joiner(backbone, position_embedding)
     model.num_channels = backbone.num_channels
     return model
-
-def random_input(batch_size=1):
-    paded_image_size = (800, 800)
-    tensors = torch.rand(batch_size, 3, *paded_image_size)
-    mask = torch.zeros(batch_size, *paded_image_size) == 0
-    image_size = tuple((int(i * 0.8) for i in paded_image_size))
-    mask[:, :image_size[0], :image_size[1]].copy_(torch.zeros(batch_size, *image_size) == 1)
-    x = NestedTensor(tensors, mask)
-    return x
-
-#%%
-if __name__ == '__main__':
-    args = easydict.EasyDict({'lr_backbone': 1, 'masks':False, 'position_embedding': 'v3',
-                            'backbone': 'resnet50', 'dilation': True, 'hidden_dim': 256,
-    })
-    model = build_backbone(args)
-    # return: list[list[NestedTensor], list[tensor]]
-    #                                        pos
-    output = model(random_input())
