@@ -2,11 +2,12 @@
 import matplotlib.pyplot as plt
 import linegraph
 import matplotlib
+from typing import List, Dict
 
 #%%
 class AxesOperations:
-    def __init__(self, ax: List):
-        self.axes = ax_list
+    def __init__(self, ax):
+        self.axes = ax
     
     def plot(self, lines: (List, Dict), initial_x=0, smooth_arg=10, alpha=0.3):
         linegraph.plot(self.axes, lines, initial_x, smooth_arg, alpha)
