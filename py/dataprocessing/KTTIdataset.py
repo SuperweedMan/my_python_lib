@@ -136,6 +136,26 @@ class ToTensor:
             target[name] = torch.tensor(anns[name])
         return target
 
+def build_KTTIDataset():
+    img_transformer = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),       
+    ])
+    target_transformer = transforms.Compose([
+        CropAnns(['boxes', 'labels', 'size', 'orig_size']),
+        ToTensor()
+    ])
+    
+    ds = KTTIDataset(
+        path='/share/data/KTTI/training/label_02', 
+        img_path='/share/data/KTTI/trackong_image/training/image_02', 
+        exclusive_raws={'track_id':[-1], 'type':['Misc', 'Cyclist', 'Person', 'Tram', 'Truck', 'Van']}, 
+        exclusive_cats=['dimensions_0', 'dimensions_1', 'dimensions_2'],
+        img_transformer=img_transformer,
+        target_transformer=target_transformer
+        )
+    return ds
+
 # %%
 if __name__ =='__main__':
     img_transformer = transforms.Compose([
