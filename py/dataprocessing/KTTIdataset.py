@@ -36,7 +36,6 @@ def get_targets_from_files(targets_path, exclusive_raws={}, exclusive_cats=[]):
         all_targets[label_name[:4]] = labels
     return all_targets
 
-#%%
 class KTTIDataset(Dataset):
     """
     创建一个KTTI dataset
@@ -99,6 +98,9 @@ class KTTIDataset(Dataset):
             target = self.all_targets_dict[idx]
             img_path = os.path.join(self.imgs_path, target['fragment'], '{:0>6d}'.format(target['frame']) + '.png')
             img = Image.open(img_path)
+            w, h =img.size
+            target['size'] = (h, w)
+            target['orig_size'] = (h, w)
             if self.target_transformer is not None:
                 target = self.target_transformer(target)
             if self.img_transformer is not None:
@@ -123,6 +125,17 @@ class CropAnns:
             if name in self.name:
                 target[name] = anns[name]
         return target
+
+class ToTensor:
+    def __init__(self):
+        pass
+
+    def __call__(self, anns):
+        target = {}
+        for name in anns:
+            target[name] = torch.tensor(anns[name])
+        return target
+
 # %%
 if __name__ =='__main__':
     img_transformer = transforms.Compose([
@@ -130,7 +143,8 @@ if __name__ =='__main__':
         transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),       
     ])
     target_transformer = transforms.Compose([
-        CropAnns(['boxes', 'labels'])
+        CropAnns(['boxes', 'labels', 'size', 'orig_size']),
+        ToTensor()
     ])
     
     ds = KTTIDataset(
@@ -142,3 +156,4 @@ if __name__ =='__main__':
         target_transformer=target_transformer
         )
     train_dl = DataLoader(ds, batch_size=3, shuffle=True, collate_fn=collate_to_list)
+    next(iter(train_dl))
