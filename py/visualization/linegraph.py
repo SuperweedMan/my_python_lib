@@ -1,9 +1,11 @@
 #%%
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib
 from collections import OrderedDict
+from typing import List, Dict 
 
-def plot(lines, initial_x=0, smooth_arg=10, alpha=0.3):
+def plot(ax: matplotlib.axes._axes.Axes, lines: (List, Dict), initial_x=0, smooth_arg=10, alpha=0.3):
     '''
     输入：
         lins: 每个曲线可以是list或者dict类型，存储其y值。其x值默认为0，可指定。
@@ -23,17 +25,17 @@ def plot(lines, initial_x=0, smooth_arg=10, alpha=0.3):
     y_smooth = np.convolve(y, np.ones((smooth_arg,))/smooth_arg, mode='same')
 
     # plt.figure(figsize=(18, 6))  # 设置画布大小，单位100像素
-    plt.plot(x, y, ls='-', lw=2, label='plot figure',  alpha=alpha, c='darkorange')
-    plt.plot(x, y_smooth, ls='-', lw=2, label='plot figure',  alpha=1, c='darkorange')
+    ax.plot(x, y, ls='-', lw=2, label='plot figure',  alpha=alpha, c='darkorange')
+    ax.plot(x, y_smooth, ls='-', lw=2, label='plot figure',  alpha=1, c='darkorange')
     # plt.xlim(1, x.shape[0])  
     # plt.xlim(1, 50)
 
     for k, v in token_place.items():
-        plt.axvline(x=v, c='black', ls='--', lw=2)
-
-    plt.show()
+        ax.axvline(x=v, c='black', ls='--', lw=2)
 
 #%%
 if __name__ == '__main__':
+    fig = plt.figure()
+    ax = fig.add_axes([0.1, 0.1, 0.8, 0.8])
     y = {'0':[1,2,3]*10, '1':[1,2,3] * 10, '2':[1,2,3] * 10}
-    plot(y)
+    plot(ax, y)

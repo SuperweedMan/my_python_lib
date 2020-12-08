@@ -14,6 +14,7 @@ from PIL import Image
 import os
 import matplotlib.pyplot as plt
 from py.visualization import box_ops
+from py.dataprocessing import KTTIdataset
 #%%
 def get_coco_api_from_dataset(dataset):
     for _ in range(10):
@@ -36,19 +37,27 @@ def build_dataset(image_set, args):
 
 
 dataset_train = build_dataset(image_set='train', args=CONFIG)
+
+# dataset_train = KTTIdataset.build_KTTIDataset()
+
 # sampler_train = torch.utils.data.RandomSampler(dataset_train)
 # batch_sampler_train = torch.utils.data.BatchSampler(
 #     sampler_train, CONFIG.batch_size, drop_last=True)
 # data_loader_train = DataLoader(dataset_train, batch_sampler=batch_sampler_train,
 #                                 collate_fn=utils.collate_fn, num_workers=CONFIG.num_workers)
-#%%
-data_loader_train =DataLoader(dataset_train, shuffle=False, collate_fn=utils.collate_fn, num_workers=CONFIG.num_workers)
+
+data_loader_train =DataLoader(dataset_train, batch_size=1, shuffle=False, collate_fn=utils.collate_fn, num_workers=CONFIG.num_workers)
 #%%
 model, criterion, postprocessors = models.build_model(CONFIG)
 device = torch.device(CONFIG.device)
 checkpoint = torch.load(CONFIG.resume)
 
 model.load_state_dict(checkpoint['model'])
+model.class_embed = torch.nn.Linear(
+    in_features=model.class_embed.in_features,
+    out_features=3,  # ['Car', 'Pedestrian'] + background
+    bias=True
+)
 model.to(device)
 #%%
 atten = {}
@@ -71,7 +80,7 @@ def print_shape(module, input, output):
 
 # model.transformer.encoder.layers[5].self_attn.register_forward_hook(print_atten)
 model.transformer.encoder.layers[5].self_attn.register_forward_hook(encoder_atten)
-model.transformer.decoder.layers[5].multihead_attn.register_forward_hook(decoder_atten)
+model.transformer.decoder.layers[0].multihead_attn.register_forward_hook(decoder_atten)
 model.backbone[0].body.layer4[2].conv3.register_forward_hook(print_shape)
 #%%
 for index, (samples, targets) in enumerate(data_loader_train):
@@ -94,8 +103,9 @@ for index, (samples, targets) in enumerate(data_loader_train):
         for target in targets:
             # bbox = torchvision.ops.box_convert(target['boxes'], 'cxcywh', 'xyxy')
             print(target['orig_size'], target['size'], target['boxes'])
-            bbox = box_ops.boxes_percentage_to_value(target['boxes'], target['size'])
-            bbox = torchvision.ops.box_convert(bbox, 'cxcywh', "xywh")
+            # bbox = box_ops.boxes_percentage_to_value(target['boxes'], target['size'])
+            bbox = target['boxes']
+            bbox = torchvision.ops.box_convert(bbox, 'xyxy', "xywh")
             for box in bbox:
                 rect = plt.Rectangle((box[0], box[1]), box[2], box[3], fill=False, edgecolor = 'red',linewidth=1)
                 ax.add_patch(rect)
@@ -109,10 +119,18 @@ for index, (samples, targets) in enumerate(data_loader_train):
                 rect = plt.Rectangle((box[0], box[1]), box[2], box[3], fill=False, edgecolor = 'green',linewidth=1)
                 ax.add_patch(rect)
         # show imgs
-        img_filenames = ['{0:012d}.jpg'.format(int(target['image_id'].cpu().numpy())) for target in targets]
-        path = '/share/data/train2017'
+        # img_filenames = ['{0:012d}.jpg'.format(int(target['image_id'].cpu().numpy())) for target in targets]
+        # path = '/share/data/train2017'
+
+        img_filenames = [os.path.join(
+                                        '{:0>4d}'.format(target['fragment'].cpu().numpy()), 
+                                        '{:0>6d}'.format(target['frame'].cpu().numpy()) + '.png'
+                                    ) for target in targets]
+        path = '/share/data/KTTI/trackong_image/training/image_02'
+
         imgs_path = [os.path.join(path, filename) for filename in img_filenames]
         imgs = [torchvision.io.read_image(img_path) for img_path in imgs_path]
+
         # big_img = torchvision.utils.make_grid(imgs)
         # plt.imshow(samples.tensors[0].cpu().permute(1, 2, 0).numpy())
         print(samples.tensors[0].shape)
@@ -152,6 +170,7 @@ for index, (samples, targets) in enumerate(data_loader_train):
             for index, weight in enumerate(focus):
                 atten_map[index].mul_(weight)
             box.append(atten_map.sum(0))
+            # box.append(torch.nn.functional.layer_norm(atten_map.sum(0)[None], normalized_shape=atten_map.shape[-3:])[0])
         boxes_img = torchvision.utils.make_grid(box, pad_value=1)
         plt.imshow(boxes_img.permute(1, 2, 0).numpy(), cmap=plt.cm.hot, interpolation='none')
         break

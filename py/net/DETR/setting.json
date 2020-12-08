@@ -46,6 +46,8 @@
     "set_cost_class": 1, 
     "set_cost_giou": 2, 
     "start_epoch":0, 
+    "epochs": 70,
     "weight_decay": 0.0001, 
-    "world_size": 1
+    "world_size": 1,
+    "KTTI": true
 }

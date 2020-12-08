@@ -13,9 +13,11 @@ from engine import train_one_epoch
 import models
 from PIL import Image
 import os
+import json
 import matplotlib.pyplot as plt
 from py.visualization import box_ops
 from py.dataprocessing import KTTIdataset
+from py.visualization.plt_operations import AxesOperations
 
 #%%
 device = torch.device(CONFIG.device)
@@ -75,30 +77,42 @@ for frame_num, (samples, targets) in enumerate(data_loader_train):
 
     
     for index, target in enumerate(targets):
-        fig = plt.figure(figsize=(12.24, 3.7))
-        ax = fig.add_subplot(1,1,1)
-        # print(target['orig_size'], target['size'], target['boxes'])
-        # targets
-        bbox = box_ops.boxes_percentage_to_value(target['boxes'], target['size'])
-        bbox = torchvision.ops.box_convert(bbox, 'cxcywh', "xywh")
-        # for box in bbox:
-        #     rect = plt.Rectangle((box[0], box[1]), box[2], box[3], fill=False, edgecolor = 'red',linewidth=1)
+        # fig = plt.figure(figsize=(12.24, 3.7))
+        # ax = fig.add_subplot(1,1,1)
+        # ax_operator = AxesOperations(ax)
+        # ax_operator.labeled_boxs(output, 'cxcywh', KTTIdataset.KTTIDataset.type_id, target['size'],
+
+        #     )
+        output['size'] = target['size']
+        del output['aux_outputs']
+        output_json = {k: v.detach().cpu().numpy().tolist() for k, v in output.items()}
+        path = '/share/data/KTTI_predictions/fragment_{:0>4d}-frame{:0>6d}.json'.format(target['fragment'], target['frame'])
+        with open(path, 'w') as f:
+            json.dump(output_json, f)
+
+
+        # # print(target['orig_size'], target['size'], target['boxes'])
+        # # targets
+        # bbox = box_ops.boxes_percentage_to_value(target['boxes'], target['size'])
+        # bbox = torchvision.ops.box_convert(bbox, 'cxcywh', "xywh")
+        # # for box in bbox:
+        # #     rect = plt.Rectangle((box[0], box[1]), box[2], box[3], fill=False, edgecolor = 'red',linewidth=1)
+        # #     ax.add_patch(rect)
+        # # outputs
+        # boxes = output['pred_boxes'][index]
+        # boxes = box_ops.boxes_percentage_to_value(boxes, target['size'])
+        # boxes = torchvision.ops.box_convert(boxes, 'cxcywh', "xywh")
+        # for i, box in enumerate(boxes):
+        #     rect = plt.Rectangle((box[0], box[1]), box[2], box[3], fill=False, edgecolor = 'green',linewidth=1)
         #     ax.add_patch(rect)
-        # outputs
-        boxes = output['pred_boxes'][index]
-        boxes = box_ops.boxes_percentage_to_value(boxes, target['size'])
-        boxes = torchvision.ops.box_convert(boxes, 'cxcywh', "xywh")
-        for i, box in enumerate(boxes):
-            rect = plt.Rectangle((box[0], box[1]), box[2], box[3], fill=False, edgecolor = 'green',linewidth=1)
-            ax.add_patch(rect)
-            ax.text(rect.xy[0], rect.xy[1], "{0:.3f}".format(float(output['pred_logits'][i].max().detach().cpu().numpy())),
-                    va='top', ha='left', fontsize=6, color='black',
-                    bbox=dict(facecolor='g', joinstyle='round', alpha=0.6, lw=0, pad=0))
+        #     ax.text(rect.xy[0], rect.xy[1], "{0:.3f}".format(float(output['pred_logits'][i].max().detach().cpu().numpy())),
+        #             va='top', ha='left', fontsize=6, color='black',
+        #             bbox=dict(facecolor='g', joinstyle='round', alpha=0.6, lw=0, pad=0))
         # 显示图像
-        plt.imshow(
-            torch.nn.functional.interpolate(
-                imgs[index][None], size=samples.tensors[index].shape[-2:]
-                ).squeeze(0).permute(1, 2, 0).numpy()
-        )
-        plt.savefig('/share/data/KTTI_predictions/fragment_{:0>4d}-frame{:0>6d}.jpg'.format(target['fragment'], target['frame']))
-    break
+        # plt.imshow(
+        #     torch.nn.functional.interpolate(
+        #         imgs[index][None], size=samples.tensors[index].shape[-2:]
+        #         ).squeeze(0).permute(1, 2, 0).numpy()
+        # )
+        # plt.imshow(imgs[index][None].squeeze(0).permute(1, 2, 0).numpy())
+        # plt.savefig('/share/data/KTTI_predictions/fragment_{:0>4d}-frame{:0>6d}.jpg'.format(target['fragment'], target['frame']))
