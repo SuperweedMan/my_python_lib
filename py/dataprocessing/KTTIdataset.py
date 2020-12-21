@@ -19,6 +19,7 @@ from collections import Iterable
 from torchvision import transforms
 import pandas
 
+
 from py.visualization.box_ops import boxes_value_to_percentage
 
 #%%
@@ -239,8 +240,8 @@ def build_KTTIDataset():
     ])
     
     ds = KTTIDataset(
-        path='/share/data/KTTI/training/label_02', 
-        img_path='/share/data/KTTI/trackong_image/training/image_02', 
+        path='/root/outside/KTTI/training/label_02', 
+        img_path='/root/outside/KTTI/trackong_image/training/image_02', 
         exclusive_raws={'track_id':[-1], 'type':['Misc', 'Cyclist', 'Person', 'Tram', 'Truck', 'Van']}, 
         exclusive_cats=['dimensions_0', 'dimensions_1', 'dimensions_2'],
         img_transformer=img_transformer,
@@ -263,8 +264,8 @@ def build_KTTIFragmentDataset():
         CovertBoxes('xyxy', 'cxcywh')
     ])
     ds = KTTIFragmentDataset(
-        path='/share/data/KTTI/training/label_02', 
-        img_path='/share/data/KTTI/trackong_image/training/image_02', 
+        path='/root/outside/KTTI/training/label_02', 
+        img_path='/root/outside/KTTI/trackong_image/training/image_02', 
         len=3,
         exclusive_raws={'track_id':[-1], 'type':['Misc', 'Cyclist', 'Person', 'Tram', 'Truck', 'Van']}, 
         exclusive_cats=['dimensions_0', 'dimensions_1', 'dimensions_2'],
