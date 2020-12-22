@@ -1,9 +1,11 @@
 #%%
 # %matplotlib inline
-%matplotlib inline
 import numpy as np
-import matplotlib.pyplot as plt
+import os
+os.environ["DISPLAY"]=":1"
 import matplotlib
+matplotlib.use("Qt5Agg")
+import matplotlib.pyplot as plt
 from matplotlib import animation
 # from matplotlib import animation, rc
 # from IPython.display import HTML
@@ -32,5 +34,5 @@ anim = animation.FuncAnimation(fig=fig,
                                        init_func=init,
                                        interval=20,# 20 frames per second
                                        blit=False)
-anim.save('sinx.gif', writer='imagemagick')
+# anim.save('sinx.gif', writer='imagemagick')
 plt.show()
