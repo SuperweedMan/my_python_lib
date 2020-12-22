@@ -8,7 +8,7 @@ from datasets.coco import build as build_coco
 from models.util import misc as utils
 from config import CONFIG
 from torch.utils.data import DataLoader, DistributedSampler
-from engine import train_one_epoch
+from engine import train_one_epoch,eval_one_epoch
 
 import models
 from PIL import Image
@@ -67,13 +67,19 @@ model.to(device)
 #%%
 FIFO = []
 for epoch in range(CONFIG.start_epoch, CONFIG.epochs):
-    train_stats = train_one_epoch(
-            model, criterion, data_loader_train, optimizer, device, epoch,
-            CONFIG.clip_max_norm)
-    lr_scheduler.step()
+    # train_stats = train_one_epoch(
+    #         model, criterion, data_loader_train, optimizer, device, epoch,
+    #         CONFIG.clip_max_norm)
+    # lr_scheduler.step()
 
-    log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
-                     'epoch': epoch}
+    eval_stats = eval_one_epoch(
+            model, criterion, data_loader_train, optimizer, device, epoch, CONFIG.clip_max_norm
+        )
+
+    # log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
+    #                  'epoch': epoch}
+
+    log_stats = {**{f'train_{k}': v for k, v in eval_stats.items()}, 'epoch': epoch}
     FIFO.append(log_stats)
 #%%
 torch.save(
