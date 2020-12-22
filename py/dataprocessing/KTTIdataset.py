@@ -43,7 +43,7 @@ class KTTIDataset(Dataset):
     """
     创建一个KTTI dataset
     """
-    type_id =  ['Car', 'Cyclist', 'Misc', 'Pedestrian', 'Person', 'Tram', 'Truck', 'Van'] 
+    type_id =  ['Car', 'Cyclist', 'Misc', 'Pedestrian', 'Person', 'Tram', 'Truck', 'Van', 'DontCare'] 
     def __init__(self, path, img_path, return_frame=True,  exclusive_raws={}, exclusive_cats=[], img_transformer=None, target_transformer=None, im_target_trans=None):
         """
         input:
@@ -247,6 +247,32 @@ def build_KTTIDataset():
         target_transformer=target_transformer,
         im_target_trans=im_target_trans
         )
+    return ds
+
+def build_eval_KTTIDataset():
+    img_transformer = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),       
+    ])
+    target_transformer = transforms.Compose([
+        CropAnns(['boxes', 'labels', 'size', 'orig_size', 'fragment', 'frame', 'track_id']),
+        ToTensor()
+    ])
+    im_target_trans = Compose([
+        ToPercentage(),
+        CovertBoxes('xyxy', 'cxcywh')
+    ])
+    
+    ds = KTTIDataset(
+        path='/share/data/KTTI/training/label_02', 
+        img_path='/share/data/KTTI/trackong_image/training/image_02', 
+        exclusive_raws={}, 
+        exclusive_cats=['dimensions_0', 'dimensions_1', 'dimensions_2'],
+        img_transformer=img_transformer,
+        target_transformer=target_transformer,
+        im_target_trans=im_target_trans
+        )
+    ds.type_id = ['Car', 'Pedestrian']
     return ds
 
 def build_KTTIFragmentDataset():

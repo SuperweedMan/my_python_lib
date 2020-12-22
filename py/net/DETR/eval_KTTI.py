@@ -41,7 +41,7 @@ optimizer = torch.optim.AdamW(param_dicts, lr=CONFIG.lr,
                                   weight_decay=CONFIG.weight_decay)
 lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, CONFIG.lr_drop)
 # 数据集
-dataset_train = KTTIdataset.build_KTTIDataset()
+dataset_train = KTTIdataset.build_eval_KTTIDataset()
 
 data_loader_train =DataLoader(dataset_train, batch_size=1, shuffle=False, collate_fn=utils.collate_fn, num_workers=CONFIG.num_workers)
 #%%
@@ -89,6 +89,9 @@ for frame_num, (samples, targets) in enumerate(data_loader_train):
         path = '/share/data/KTTI_predictions/fragment_{:0>4d}-frame{:0>6d}.json'.format(target['fragment'], target['frame'])
         with open(path, 'w') as f:
             json.dump(output_json, f)
+        print(
+            'fragment_{:0>4d}-frame{:0>6d} is completed.'.format(target['fragment'], target['frame'])
+        )
 
 
         # # print(target['orig_size'], target['size'], target['boxes'])

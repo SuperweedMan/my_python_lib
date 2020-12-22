@@ -25,13 +25,15 @@ def plot(ax: matplotlib.axes._axes.Axes, lines: (List, Dict), initial_x=0, smoot
     y_smooth = np.convolve(y, np.ones((smooth_arg,))/smooth_arg, mode='same')
 
     # plt.figure(figsize=(18, 6))  # 设置画布大小，单位100像素
-    ax.plot(x, y, ls='-', lw=2, label='plot figure',  alpha=alpha, c='darkorange')
-    ax.plot(x, y_smooth, ls='-', lw=2, label='plot figure',  alpha=1, c='darkorange')
+    line = ax.plot(x, y, ls='-', lw=2, label='plot figure',  alpha=alpha, c='darkorange')
+    smooth_line = ax.plot(x, y_smooth, ls='-', lw=2, label='plot figure',  alpha=1, c='darkorange')
     # plt.xlim(1, x.shape[0])  
     # plt.xlim(1, 50)
 
     for k, v in token_place.items():
         ax.axvline(x=v, c='black', ls='--', lw=2)
+    
+    return line, smooth_line
 
 #%%
 if __name__ == '__main__':

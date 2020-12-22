@@ -16,7 +16,7 @@ class AxesOperations:
         self.axes = ax
     
     def plot(self, lines: Tuple[List, Dict], initial_x=0, smooth_arg=10, alpha=0.3):
-        linegraph.plot(self.axes, lines, initial_x, smooth_arg, alpha)
+        return linegraph.plot(self.axes, lines, initial_x, smooth_arg, alpha)
 
     def heatmap(self, data: np.ndarray):
         im = self.axes.imshow(data, cmap=plt.cm.hot_r)
