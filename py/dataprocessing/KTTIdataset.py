@@ -18,6 +18,7 @@ from torch.utils.data import DataLoader, Dataset
 from collections import Iterable
 from torchvision import transforms
 import pandas
+from collections import Iterable
 
 
 from py.visualization.box_ops import boxes_value_to_percentage
@@ -101,21 +102,39 @@ class KTTIDataset(Dataset):
                     default type <dict{'categoies name': value or list[values of targets]}>
         """
         if self.return_frame:
-            target = self.all_targets_dict[idx]
-            img_path = os.path.join(self.imgs_path, target['fragment'], '{:0>6d}'.format(target['frame']) + '.png')
-            img = Image.open(img_path)
-            w, h =img.size
-            target['size'] = (h, w)
-            target['orig_size'] = (h, w)
-            if self.target_transformer is not None:
-                target = self.target_transformer(target)
-            if self.img_transformer is not None:
-                img = self.img_transformer(img)
-            if self.im_target_trans is not None:
-                img, target = self.im_target_trans(img, target)
+            targets = self.all_targets_dict[idx]
+            if isinstance(targets, list):
+                returns = []
+                for target in targets:
+                    img_path = os.path.join(self.imgs_path, target['fragment'], '{:0>6d}'.format(target['frame']) + '.png')
+                    img = Image.open(img_path)
+                    w, h =img.size
+                    target['size'] = (h, w)
+                    target['orig_size'] = (h, w)
+                    if self.target_transformer is not None:
+                        target = self.target_transformer(target)
+                    if self.img_transformer is not None:
+                        img = self.img_transformer(img)
+                    if self.im_target_trans is not None:
+                        img, target = self.im_target_trans(img, target)
+                    returns.append((img, target))
+                return returns
+            else:
+                target = targets
+                img_path = os.path.join(self.imgs_path, target['fragment'], '{:0>6d}'.format(target['frame']) + '.png')
+                img = Image.open(img_path)
+                w, h =img.size
+                target['size'] = (h, w)
+                target['orig_size'] = (h, w)
+                if self.target_transformer is not None:
+                    target = self.target_transformer(target)
+                if self.img_transformer is not None:
+                    img = self.img_transformer(img)
+                if self.im_target_trans is not None:
+                    img, target = self.im_target_trans(img, target)
+                return img, target
         else:
             raise ValueError('The function to return a entire sequence is not yet implemented.')
-        return img, target
 
     def __len__(self):
         return sum(self.num)
@@ -137,14 +156,27 @@ class KTTIFragmentDataset(KTTIDataset):
         return len(self.index)
 
     def __getitem__(self, idx):
-        idx = self.index[idx]  # 获取index 避开长度不够的地方
-        imgs = []
-        targets = []
-        for i in range(self.len):
-            img, target = super().__getitem__(idx)
-            imgs.append(img)
-            targets.append(target)
-        return imgs, targets
+        idxs = self.index[idx]  # 获取index 避开长度不够的地方
+        if isinstance(idxs, Iterable):
+            returns = []
+            for idx in idxs:
+                imgs = []
+                targets = []
+                for i in range(self.len):
+                    img, target = super().__getitem__(idx)
+                    imgs.append(img)
+                    targets.append(target)
+                returns.append((imgs, targets))
+            return returns    
+        else:
+            idx = idxs
+            imgs = []
+            targets = []
+            for i in range(self.len):
+                img, target = super().__getitem__(idx)
+                imgs.append(img)
+                targets.append(target)
+            return imgs, targets
 
 
 
@@ -240,8 +272,8 @@ def build_KTTIDataset():
     ])
     
     ds = KTTIDataset(
-        path='/root/outside/KTTI/training/label_02', 
-        img_path='/root/outside/KTTI/trackong_image/training/image_02', 
+        path='/share/data/KTTI/training/label_02', 
+        img_path='/share/data/KTTI/trackong_image/training/image_02', 
         exclusive_raws={'track_id':[-1], 'type':['Misc', 'Cyclist', 'Person', 'Tram', 'Truck', 'Van']}, 
         exclusive_cats=['dimensions_0', 'dimensions_1', 'dimensions_2'],
         img_transformer=img_transformer,
@@ -290,8 +322,8 @@ def build_KTTIFragmentDataset():
         CovertBoxes('xyxy', 'cxcywh')
     ])
     ds = KTTIFragmentDataset(
-        path='/root/outside/KTTI/training/label_02', 
-        img_path='/root/outside/KTTI/trackong_image/training/image_02', 
+        path='/share/data/KTTI/training/label_02', 
+        img_path='/share/data/KTTI/trackong_image/training/image_02', 
         len=3,
         exclusive_raws={'track_id':[-1], 'type':['Misc', 'Cyclist', 'Person', 'Tram', 'Truck', 'Van']}, 
         exclusive_cats=['dimensions_0', 'dimensions_1', 'dimensions_2'],
