@@ -3,9 +3,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
 from collections import OrderedDict
-from typing import List, Dict 
+from typing import List, Dict
 
-def plot(ax: matplotlib.axes._axes.Axes, lines: (List, Dict), initial_x=0, smooth_arg=10, alpha=0.3):
+from torch._C import Value 
+
+def plot(ax: matplotlib.axes._axes.Axes, lines: (List, Dict), initial_x=0, smooth_arg=10, alpha=0.3, **kargs):
     '''
     输入：
         lins: 每个曲线可以是list或者dict类型，存储其y值。其x值默认为0，可指定。
@@ -22,11 +24,17 @@ def plot(ax: matplotlib.axes._axes.Axes, lines: (List, Dict), initial_x=0, smoot
     
     x = np.arange(initial_x, len(lines))
     y = np.array(lines)
-    y_smooth = np.convolve(y, np.ones((smooth_arg,))/smooth_arg, mode='same')
+    
 
     # plt.figure(figsize=(18, 6))  # 设置画布大小，单位100像素
-    line = ax.plot(x, y, ls='-', lw=2, label='plot figure',  alpha=alpha, c='darkorange')
-    smooth_line = ax.plot(x, y_smooth, ls='-', lw=2, label='plot figure',  alpha=1, c='darkorange')
+    line = ax.plot(x, y, ls='-', lw=2, label='plot figure',  alpha=alpha, **kargs)
+    if smooth_arg != 0:
+        if len(y) < smooth_arg:
+            raise ValueError("smooth_arg can't smaller then length of y!")
+        y_smooth = np.convolve(y, np.ones((smooth_arg,))/smooth_arg, mode='same')
+        smooth_line = ax.plot(x, y_smooth, ls='-', lw=2, label='plot figure',  alpha=1, **kargs)
+    else:
+        smooth_line = None
     # plt.xlim(1, x.shape[0])  
     # plt.xlim(1, 50)
 

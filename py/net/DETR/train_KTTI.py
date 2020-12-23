@@ -16,6 +16,7 @@ import os
 import matplotlib.pyplot as plt
 from py.visualization import box_ops
 from py.dataprocessing import KTTIdataset
+from py.visualization.plt_operations import AxesOperations
 #%%
 device = torch.device(CONFIG.device)
 # 创建模型
@@ -37,9 +38,15 @@ param_dicts = [
 optimizer = torch.optim.AdamW(param_dicts, lr=CONFIG.lr,
                                   weight_decay=CONFIG.weight_decay)
 lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, CONFIG.lr_drop)
+#%%
 # 数据集
-dataset_train = KTTIdataset.build_KTTIDataset()
-data_loader_train =DataLoader(dataset_train, batch_size=10, shuffle=True, collate_fn=utils.collate_fn, num_workers=CONFIG.num_workers)
+split_position = 0.7
+dataset_train = KTTIdataset.build_KTTIDataset(partial={'front': split_position})
+data_loader_train =DataLoader(dataset_train, batch_size=8, shuffle=True, collate_fn=utils.collate_fn, num_workers=CONFIG.num_workers)
+
+dataset_eval = KTTIdataset.build_KTTIDataset(partial={'behind': split_position})
+data_loader_eval =DataLoader(dataset_eval, batch_size=8, shuffle=True, collate_fn=utils.collate_fn, num_workers=CONFIG.num_workers)
+
 #%%
 # 载入
 # checkpoint = torch.load(CONFIG.resume)
@@ -56,38 +63,54 @@ data_loader_train =DataLoader(dataset_train, batch_size=10, shuffle=True, collat
 #     out_features=3,  # ['Car', 'Pedestrian'] + background
 #     bias=True
 # )
-checkpoint = torch.load('./KTTI_epoch_49', map_location= lambda storage, loc : storage.cuda())
+checkpoint = torch.load('./KITTI_epoch_13', map_location= lambda storage, loc : storage.cuda())
 model.load_state_dict(checkpoint['model'])
 optimizer.load_state_dict(checkpoint['optimizer'])
 lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
 if 'epoch' in checkpoint:
     CONFIG.start_epoch = checkpoint['epoch']
 model.to(device)
-
+FIFO = checkpoint['FIFO']
 #%%
-FIFO = []
+# FIFO = []
 for epoch in range(CONFIG.start_epoch, CONFIG.epochs):
-    # train_stats = train_one_epoch(
-    #         model, criterion, data_loader_train, optimizer, device, epoch,
-    #         CONFIG.clip_max_norm)
-    # lr_scheduler.step()
+    train_stats = train_one_epoch(
+            model, criterion, data_loader_train, optimizer, device, epoch,
+            CONFIG.clip_max_norm)
+    lr_scheduler.step()
 
     eval_stats = eval_one_epoch(
-            model, criterion, data_loader_train, optimizer, device, epoch, CONFIG.clip_max_norm
+            model, criterion, data_loader_eval, optimizer, device, epoch, CONFIG.clip_max_norm
         )
 
-    # log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
-    #                  'epoch': epoch}
-
-    log_stats = {**{f'train_{k}': v for k, v in eval_stats.items()}, 'epoch': epoch}
-    FIFO.append(log_stats)
+    log_stats_train = {**{f'train_{k}': v for k, v in train_stats.items()}, 'epoch': epoch}
+    log_stats_eval = {**{f'train_{k}': v for k, v in eval_stats.items()}, 'epoch': epoch}
+    FIFO.append((log_stats_train, log_stats_eval))
+#%%
+# checkpoint = torch.load('./KITTI_epoch_13')
+# FIFO = checkpoint['FIFO']
+train_loss, eval_loss = zip(*FIFO) 
+train_loss = [loss['train_loss'] for loss in train_loss]
+eval_loss = [loss['train_loss'] for loss in eval_loss]
+#%%
+fig, ax = plt.subplots(1)
+ax_operator = AxesOperations(ax)
+ax_operator.plot(train_loss, smooth_arg=0, c='darkorange')
+ax_operator.plot(eval_loss, smooth_arg=0, c='blue')
+fig.show()
 #%%
 torch.save(
     {
         'model': model.state_dict(),
         'optimizer': optimizer.state_dict(),
         'lr_scheduler': lr_scheduler.state_dict(),
-        'epoch': epoch
+        'epoch': epoch,
+        'FIFO': FIFO,
     },
-    './KTTI_epoch_49'
+    './KITTI_epoch_13'
 )
+#%%
+def callbackfunc(module, input):
+    print(type(module))
+
+handle = model.register_forward_pre_hook(callbackfunc)

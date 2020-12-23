@@ -73,3 +73,5 @@ for fragment in range(21):
                                     interval=5,# 20 frames per second
                                     blit=False)
     anim.save('fragment_{:0>4d}.gif'.format(fragment), writer='imagemagick')
+
+# %%

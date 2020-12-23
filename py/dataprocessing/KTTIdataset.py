@@ -24,11 +24,22 @@ from collections import Iterable
 from py.visualization.box_ops import boxes_value_to_percentage
 
 #%%
-def get_targets_from_files(targets_path, exclusive_raws={}, exclusive_cats=[]):
+def get_targets_from_files(targets_path, partial={}, exclusive_raws={}, exclusive_cats=[]):
     if not os.path.exists(targets_path):
         raise ValueError('wrong path')
     all_targets = {}
     label_names = os.listdir(targets_path)
+    # 切片
+    if len(partial) != 0:
+        key, item = list(partial.items())[0]
+        if key in ("front", "behind"):
+            split_position = int(item * len(label_names))
+            if key == 'front': 
+                label_names = label_names[:split_position]
+            else:
+                label_names = label_names[split_position:]
+        else:
+            raise RuntimeError("error key name {}".format(key))
     for label_name in label_names: 
         # 读取txt文件并添加标签头
         column_name = ['frame', 'track_id', 'type', 'truncated', 'occluded', 'alpha', 'bbox_0', 'bbox_1', 'bbox_2', 'bbox_3', 'dimensions_0', 'dimensions_1', 'dimensions_2', 'location_0', 'location_1', 'location_2', 'ration_y']
@@ -46,7 +57,9 @@ class KTTIDataset(Dataset):
     创建一个KTTI dataset
     """
     type_id =  ['Car', 'Cyclist', 'Misc', 'Pedestrian', 'Person', 'Tram', 'Truck', 'Van', 'DontCare'] 
-    def __init__(self, path, img_path, return_frame=True,  exclusive_raws={}, exclusive_cats=[], img_transformer=None, target_transformer=None, im_target_trans=None):
+    def __init__(self, path, img_path, partial={}, return_frame=True,  
+                exclusive_raws={}, exclusive_cats=[], img_transformer=None, 
+                target_transformer=None, im_target_trans=None):
         """
         input:
             path: <string> path of label files(*.txt).
@@ -57,7 +70,7 @@ class KTTIDataset(Dataset):
         """
         assert isinstance(exclusive_raws, dict) and isinstance(exclusive_cats, list)
         exclusive_raws = { k:v if isinstance(v, list) else [v] for k, v in exclusive_raws.items()}
-        all_targets = get_targets_from_files(path, exclusive_raws=exclusive_raws, exclusive_cats=exclusive_cats)  # 返回的是pandas格式
+        all_targets = get_targets_from_files(path, partial, exclusive_raws=exclusive_raws, exclusive_cats=exclusive_cats)  # 返回的是pandas格式
         self.all_targets_dict = {}
         self.return_frame = return_frame
         self.imgs_path = img_path
@@ -257,7 +270,7 @@ class Compose(object):
         format_string += "\n)"
         return format_string
 
-def build_KTTIDataset():
+def build_KTTIDataset(partial):
     img_transformer = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),       
@@ -273,6 +286,7 @@ def build_KTTIDataset():
     
     ds = KTTIDataset(
         path='/share/data/KTTI/training/label_02', 
+        partial=partial,
         img_path='/share/data/KTTI/trackong_image/training/image_02', 
         exclusive_raws={'track_id':[-1], 'type':['Misc', 'Cyclist', 'Person', 'Tram', 'Truck', 'Van']}, 
         exclusive_cats=['dimensions_0', 'dimensions_1', 'dimensions_2'],
@@ -282,7 +296,7 @@ def build_KTTIDataset():
         )
     return ds
 
-def build_eval_KTTIDataset():
+def build_eval_KTTIDataset(just_show=False):
     img_transformer = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),       
@@ -295,18 +309,26 @@ def build_eval_KTTIDataset():
         ToPercentage(),
         CovertBoxes('xyxy', 'cxcywh')
     ])
-    
-    ds = KTTIDataset(
-        path='/share/data/KTTI/training/label_02', 
-        img_path='/share/data/KTTI/trackong_image/training/image_02', 
-        exclusive_raws={}, 
-        exclusive_cats=['dimensions_0', 'dimensions_1', 'dimensions_2'],
-        img_transformer=img_transformer,
-        target_transformer=target_transformer,
-        im_target_trans=im_target_trans
-        )
-    ds.type_id = ['Car', 'Pedestrian']
-    return ds
+    if just_show:
+        ds = KTTIDataset(
+            path='/share/data/KTTI/training/label_02', 
+            img_path='/share/data/KTTI/trackong_image/training/image_02', 
+            exclusive_raws={}, 
+            exclusive_cats=['dimensions_0', 'dimensions_1', 'dimensions_2'],
+            )
+        return ds, img_transformer, target_transformer, im_target_trans
+    else:
+        ds = KTTIDataset(
+            path='/share/data/KTTI/training/label_02', 
+            img_path='/share/data/KTTI/trackong_image/training/image_02', 
+            exclusive_raws={}, 
+            exclusive_cats=['dimensions_0', 'dimensions_1', 'dimensions_2'],
+            img_transformer=img_transformer,
+            target_transformer=target_transformer,
+            im_target_trans=im_target_trans
+            )
+        ds.type_id = ['Car', 'Pedestrian']
+        return ds
 
 def build_KTTIFragmentDataset():
     img_transformer = transforms.Compose([
@@ -335,6 +357,6 @@ def build_KTTIFragmentDataset():
 
 # %%
 if __name__ =='__main__':
-    ds = build_KTTIDataset()
+    ds = build_KTTIDataset(partial={'behind': 0.7})
     train_dl = DataLoader(ds, batch_size=3, shuffle=True, collate_fn=collate_to_list)
     print(next(iter(train_dl)))
