@@ -19,11 +19,14 @@ class FeatureMap:
             self.features[name] = output.detach().clone()
         return hook
 
-    def heatmap(self, name: str, ax: matplotlib.axes._axes.Axes):
+    def heatmap(self, name: str, ax: matplotlib.axes._axes.Axes, index: int=0):
         assert isinstance(name, str)
         if name in self.features:
             axes_operator = AxesOperations(ax)
-            axes_operator.heatmap(self.features[name].numpy())
+            if isinstance(self.features[name], torch.Tensor):
+                axes_operator.heatmap(self.features[name].numpy())
+            else:
+                axes_operator.heatmap(self.features[name][index].numpy())
         else:
             raise RuntimeError("Can't find feature mpa named {}".format(name))
 
