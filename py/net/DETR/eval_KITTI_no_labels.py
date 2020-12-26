@@ -27,6 +27,7 @@ from py.visualization.plt_operations import AxesOperations
 from py.dataprocessing.KTTIdataset import CropAnns, ToTensor, ToPercentage, CovertBoxes,Compose
 from py.net.DETR.models.util.misc import nested_tensor_from_tensor_list
 from py.visualization.plt_operations import AxesOperations
+from py.net.utils import Detection_associated_with_tracking
 
 #%%
 device = torch.device(CONFIG.device)
@@ -92,5 +93,46 @@ for img_name in imgs_name:
         torch.tensor(img_size),
     )
     plt.pause(0.1)
+    plt.cla()
+plt.ioff()
+
+#%%
+path = "/share/data/KTTI/trackong_image/testing/image_02/0001"
+imgs_name = os.listdir(path)
+imgs_name.sort()
+model.eval()
+
+tracking_matcher = Detection_associated_with_tracking.tracking_matcher(2.0)
+# 画图
+fig = plt.figure(figsize=(12.42, 3.75))
+ax = fig.add_axes([0, 0, 1, 1])
+ax_operator = AxesOperations(ax)
+plt.ion()
+for img_name in imgs_name:
+    img = Image.open(os.path.join(path, img_name))
+    output = model(img)
+    ax.imshow(img)
+    # 处理模型输出
+    output['pred_logits'] = torch.nn.functional.softmax(output['pred_logits'], dim=2)[:,:,:-1]
+    keep_idxs = torch.max(output['pred_logits'], axis=-1).values > 0.7
+    for keep_idx in keep_idxs:
+        output['pred_logits'] = output['pred_logits'][:, keep_idx]
+        output['pred_boxes'] = output['pred_boxes'][:, keep_idx]
+    idx_map, c = tracking_matcher(output)
+    print(idx_map)
+    # 准备模型预测输出 imgs , 去掉bs层
+    output['pred_logits'] = output['pred_logits'][0]
+    output['pred_boxes'] = output['pred_boxes'][0].detach().cpu()
+    output['track_ids'] = idx_map
+    img_size = list(img.size)
+    img_size.reverse()
+    ax_operator.labeled_boxs(
+        output,
+        'cxcywh', 
+        ['Car', 'Pedestrain'], 
+        torch.tensor(img_size),
+        fontsize=20
+    )
+    plt.pause(0.3)
     plt.cla()
 plt.ioff()

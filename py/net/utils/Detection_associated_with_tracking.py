@@ -13,8 +13,10 @@ class masked_tracking:
         self.mask = torch.tensor([], dtype=torch.bool)
 
     def append(self, data):
+        idx = len(self.storage_list)  # 长度刚好三本次append的位置的index
         self.storage_list.append(data)
-        self.mask = torch.cat([self.mask, torch.tensor([True])]) 
+        self.mask = torch.cat([self.mask, torch.tensor([True])])
+        return idx
 
     def reset(self):
         self.storage_list = []
@@ -43,7 +45,7 @@ class masked_tracking:
             idxs = torch.tensor(idxs)
         mask_idxs = torch.where(self.mask)[0]  # mask里面为True的idx
         idxs = torch.index_select(mask_idxs, dim=0, index=idxs)
-        return idxs
+        return int(idxs)
 
     def update_mask(self, idxs):
         if len(idxs) != 0:
@@ -96,14 +98,18 @@ class tracking_matcher(nn.Module):
         # 检测目标为空
         if outputs['pred_logits'].numel() ==0:
             self.tracking_list.disable_all()  # 意味着所有的tracking没了，需要重新编号
+            return (), torch.tensor([])  # 返回空的（idx-idx）和空的代价矩阵
         # 跟踪目标为空
         elif not self.tracking_list.any_available():  # 没有正在跟踪的目标
             bs, num_queries = outputs["pred_logits"].shape[:2]
+            id_map = []
             for idx in range(num_queries):
-                self.tracking_list.append({
+                storage_idx = self.tracking_list.append({
                     'labels': torch.tensor([torch.argmax(outputs['pred_logits'][0][idx])]).detach().clone(),
                     'boxes': outputs['pred_boxes'][0][idx].detach().clone()
                 })
+                id_map.append((idx, storage_idx))
+            return id_map, torch.zeros(num_queries, num_queries)
         else:  
             # 检测目标跟跟踪目标都不为空
             bs, num_queries = outputs["pred_logits"].shape[:2]
@@ -135,36 +141,62 @@ class tracking_matcher(nn.Module):
             
             c = C[0].numpy()
             row_ind, col_ind = linear_sum_assignment(c)
-            trace_id = self.tracking_list.get_storage_idx(col_ind)  # 必须在update_mask之前
                         
             # 更新前先读取，防止前面的变化影响后面的
             temp = self.tracking_list.get_availale()
             update_mask_list = []  # 用来存储需要mask的，最后一起mask
+            id_map = []  # tuple(检测目标idx, 跟踪目标track_id)
             #遍历匹配到的，超过阈值的也成为匹配失败
             for row, col in zip(row_ind, col_ind):
-                if c[row, col] > self.max_distance:
-                    self.tracking_list.append({
+                if c[row, col] > self.max_distance:  # 代价过大，不与匹配
+                    storage_idx = self.tracking_list.append({
                         'labels': torch.tensor([torch.argmax(outputs['pred_logits'][0][row])]).detach().clone(),
                         'boxes': outputs['pred_boxes'][0][row].detach().clone()
                     })
                     update_mask_list.append(col)
+                    id_map.append((row, storage_idx))
                 else:
                     # 匹配成功的，更新数据
                     self.tracking_list.update_storage_data(col, {
                         'labels': torch.tensor([torch.argmax(outputs['pred_logits'][0][row])]).detach().clone(),
                         'boxes': outputs['pred_boxes'][0][row].detach().clone()
                     })
+                    id_map.append((row, self.tracking_list.get_storage_idx([col])))
                         
-            # 未匹配到的，加入为新的跟踪目标
+            # 未匹配到的检测目标，加入为新的跟踪目标
             for row, detection in enumerate(outputs['pred_logits'][0]):
                 if row not in row_ind:  # 找不到匹配的
-                    self.tracking_list.append({
+                    storage_idx = self.tracking_list.append({
                         'labels': torch.tensor([torch.argmax(detection)]).detach().clone(),
                         'boxes': outputs['pred_boxes'][0][row].detach().clone()
                     })
-            # 为匹配到的，变为不活动跟踪目标
+                    id_map.append((row, storage_idx))
+            # 未匹配到的跟踪目标，变为不活动跟踪目标
             for col in range(len(temp)):
                 if col not in col_ind:
                     update_mask_list.append(col)
             self.tracking_list.update_mask(update_mask_list)
-            return c, row_ind, trace_id
+            return sorted(id_map), c
+
+#%%
+if __name__ == "__main__":
+    matcher = tracking_matcher(2.0)
+    # 构造输入
+    output_1 = {
+        'pred_logits': torch.tensor([[[0.002, 0.998], [0.002, 0.998]]]),
+        'pred_boxes': torch.tensor([[[0.1, 0.1, 0.001, 0.001], [0.5, 0.5, 0.002, 0.002]]])
+    }
+    output_2 = {
+        'pred_logits': torch.Tensor(1, 0, 2),
+        'pred_boxes': torch.Tensor(1, 0, 4)
+    }
+    output_3 = {
+        'pred_logits': torch.tensor([[[0.002, 0.998], [0.002, 0.998], [0.002, 0.998]]]),
+        'pred_boxes': torch.tensor([[[0.1, 0.1, 0.001, 0.001], [0.8, 0.8, 0.002, 0.002], [0.5, 0.5, 0.002, 0.002]]])
+    }
+
+    id_map_1, c_1 = matcher(output_1)  # 无跟踪目标有检测目标
+    id_map_2, c_2 = matcher(output_3)  # 检测目标增加
+    id_map_3, c_3 = matcher(output_1)  # 检测目标减少
+    id_map_4, c_4 = matcher(output_2)  # 检测目标清空
+    print(id_map_1, id_map_2, id_map_3, id_map_4)
