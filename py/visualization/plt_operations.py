@@ -19,7 +19,7 @@ class AxesOperations:
         return linegraph.plot(self.axes, lines, initial_x, smooth_arg, alpha, **kargs)
 
     def heatmap(self, data: np.ndarray):
-        im = self.axes.imshow(data, cmap=plt.cm.hot_r)
+        im = self.axes.imshow(data, cmap=plt.cm.hot, interpolation='none')
         return im
 
     def labeled_boxs(self, data: Dict[torch.Tensor, torch.Tensor], box_form:str, 
@@ -28,7 +28,7 @@ class AxesOperations:
         assert 'pred_logits' in data
         assert 'pred_boxes' in data
         assert box_form in ['cxcywh', 'xyxy', 'xywh']
-        data['pred_boxes'] = data['pred_boxes'][0]
+        # data['pred_boxes'] = data['pred_boxes'][0]
         if box_percentage is not None:  # 若输入的是百分比数据
             data['pred_boxes'] = box_ops.boxes_percentage_to_value(
                     data['pred_boxes'], box_percentage

@@ -74,6 +74,7 @@ class KTTIDataset(Dataset):
         self.all_targets_dict = {}
         self.return_frame = return_frame
         self.imgs_path = img_path
+        self._registered_func = []
         self.img_transformer = img_transformer
         self.target_transformer = target_transformer
         self.im_target_trans = im_target_trans
@@ -103,6 +104,9 @@ class KTTIDataset(Dataset):
             self.lens = [len(v) for v in self.all_targets_dict]
             self.all_targets_dict = [x for l in self.all_targets_dict for x in l]
 
+    def register_img_hook(self, func):
+        self._registered_func.append(func)
+
     def __getitem__(self, idx):
         """
         input: 
@@ -121,6 +125,9 @@ class KTTIDataset(Dataset):
                 for target in targets:
                     img_path = os.path.join(self.imgs_path, target['fragment'], '{:0>6d}'.format(target['frame']) + '.png')
                     img = Image.open(img_path)
+                    if len(self._registered_func) > 0:
+                        for func in self._registered_func:
+                            func(img)
                     w, h =img.size
                     target['size'] = (h, w)
                     target['orig_size'] = (h, w)
@@ -136,6 +143,9 @@ class KTTIDataset(Dataset):
                 target = targets
                 img_path = os.path.join(self.imgs_path, target['fragment'], '{:0>6d}'.format(target['frame']) + '.png')
                 img = Image.open(img_path)
+                if len(self._registered_func) > 0:
+                    for func in self._registered_func:
+                        func(img)
                 w, h =img.size
                 target['size'] = (h, w)
                 target['orig_size'] = (h, w)

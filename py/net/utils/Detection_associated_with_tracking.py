@@ -16,6 +16,10 @@ class masked_tracking:
         self.storage_list.append(data)
         self.mask = torch.cat([self.mask, torch.tensor([True])]) 
 
+    def reset(self):
+        self.storage_list = []
+        self.mask = torch.tensor([], dtype=torch.bool)
+
     def get_availale(self):
         result = []
         idxs = torch.where(self.mask)[0]  # 使能的地方
@@ -75,6 +79,9 @@ class tracking_matcher(nn.Module):
         #     }]  # test
         self.tracking_list = masked_tracking()
         assert cost_class != 0 or cost_bbox != 0 or cost_giou != 0, "all costs cant be 0"
+
+    def reset(self):
+        self.tracking_list.reset()
 
     @torch.no_grad()
     def forward(self, outputs):
