@@ -280,7 +280,7 @@ class Compose(object):
         format_string += "\n)"
         return format_string
 
-def build_KTTIDataset(partial):
+def build_KTTIDataset(partial, label_path, img_path):
     img_transformer = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),       
@@ -295,9 +295,9 @@ def build_KTTIDataset(partial):
     ])
     
     ds = KTTIDataset(
-        path='/share/data/KTTI/training/label_02', 
+        path= label_path,
         partial=partial,
-        img_path='/share/data/KTTI/trackong_image/training/image_02', 
+        img_path=img_path, 
         exclusive_raws={'track_id':[-1], 'type':['Misc', 'Cyclist', 'Person', 'Tram', 'Truck', 'Van']}, 
         exclusive_cats=['dimensions_0', 'dimensions_1', 'dimensions_2'],
         img_transformer=img_transformer,
@@ -322,7 +322,7 @@ def build_eval_KTTIDataset(just_show=False):
     if just_show:
         ds = KTTIDataset(
             path='/share/data/KTTI/training/label_02', 
-            img_path='/share/data/KTTI/trackong_image/training/image_02', 
+            img_path='E:\KTTI\trackong_image\training\image_02', 
             exclusive_raws={}, 
             exclusive_cats=['dimensions_0', 'dimensions_1', 'dimensions_2'],
             )
@@ -340,7 +340,7 @@ def build_eval_KTTIDataset(just_show=False):
         ds.type_id = ['Car', 'Pedestrian']
         return ds
 
-def build_KTTIFragmentDataset():
+def build_KTTIFragmentDataset(label_path, img_path):
     img_transformer = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),       
@@ -354,8 +354,8 @@ def build_KTTIFragmentDataset():
         CovertBoxes('xyxy', 'cxcywh')
     ])
     ds = KTTIFragmentDataset(
-        path='/share/data/KTTI/training/label_02', 
-        img_path='/share/data/KTTI/trackong_image/training/image_02', 
+        path=label_path, 
+        img_path=img_path, 
         len=3,
         exclusive_raws={'track_id':[-1], 'type':['Misc', 'Cyclist', 'Person', 'Tram', 'Truck', 'Van']}, 
         exclusive_cats=['dimensions_0', 'dimensions_1', 'dimensions_2'],
