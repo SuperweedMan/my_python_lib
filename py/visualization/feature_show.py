@@ -71,7 +71,7 @@ class AttentionMap(FeatureMap):
         assert isinstance(indexs, Iterable)
         axes_operator = AxesOperations(ax)
         img_tensor = make_grid(self.features[name][bs][indexs[0]:indexs[1]].cpu().reshape(indexs[1]-indexs[0], 1, *img_shape), **kwargs)
-        img = torch.sum(img_tensor, dim=0, keepdim=True).numpy().transpose(1, 2, 0)
+        img = torch.sum(img_tensor, dim=0, keepdim=True).numpy().transpose(1, 2, 0).squeeze(-1)
         axes_operator.heatmap(img)
 # %%
 if __name__ == "__main__":
