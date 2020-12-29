@@ -25,13 +25,14 @@ class AxesOperations:
     def labeled_boxs(self, data: Dict[torch.Tensor, torch.Tensor], box_form:str, 
         labels_str:str=[], box_percentage:Tuple[int, int]=None, additional_str:List[str]=[], edgecolor:str='green', linewidth:int=1, 
         fontsize:int=6, color:str='black', txt_box=dict(facecolor='g', joinstyle='round', alpha=0.6, lw=0, pad=0)):
+        """
+        输入的数据没有bs纬度，例：
+                            {'pred_logits':Tensor(4, 2), 'pred_boxes':Tensor(4, 4)}
+        """
         assert 'pred_logits' in data
         assert 'pred_boxes' in data
         assert box_form in ['cxcywh', 'xyxy', 'xywh']
-<<<<<<< Updated upstream
         # data['pred_boxes'] = data['pred_boxes'][0]
-=======
->>>>>>> Stashed changes
         if box_percentage is not None:  # 若输入的是百分比数据
             data['pred_boxes'] = box_ops.boxes_percentage_to_value(
                     data['pred_boxes'], box_percentage
