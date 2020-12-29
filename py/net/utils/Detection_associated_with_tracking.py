@@ -141,6 +141,7 @@ class tracking_matcher(nn.Module):
             
             c = C[0].numpy()
             row_ind, col_ind = linear_sum_assignment(c)
+            row_ind, col_ind = row_ind.astype(np.int64), col_ind.astype(np.int64)
                         
             # 更新前先读取，防止前面的变化影响后面的
             temp = self.tracking_list.get_availale()
