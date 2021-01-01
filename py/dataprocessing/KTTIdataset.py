@@ -19,7 +19,7 @@ from collections import Iterable
 from torchvision import transforms
 import pandas
 from collections import Iterable
-
+from pathlib import Path
 
 from py.visualization.box_ops import boxes_value_to_percentage
 
@@ -163,9 +163,9 @@ class KTTIDataset(Dataset):
         return sum(self.num)
 
 class KTTIFragmentDataset(KTTIDataset):
-    def __init__(self, path, img_path, len, exclusive_raws={}, exclusive_cats={}, img_transformer=None, target_transformer=None, im_target_trans=None):
+    def __init__(self, path, img_path, len, partial={}, exclusive_raws={}, exclusive_cats={}, img_transformer=None, target_transformer=None, im_target_trans=None):
         self.len = len
-        super().__init__(path, img_path, return_frame=True, exclusive_raws=exclusive_raws, 
+        super().__init__(path, img_path, partial={}, return_frame=True, exclusive_raws=exclusive_raws, 
                         exclusive_cats=exclusive_cats, img_transformer=img_transformer, 
                         target_transformer=target_transformer, im_target_trans=im_target_trans)
 
@@ -173,38 +173,37 @@ class KTTIFragmentDataset(KTTIDataset):
         for mask in masks:
             mask[-(self.len - 1):] = 0 
         masks = np.concatenate(masks, axis=0)    
-        self.index = np.where(masks > 0)[0]
+        self.index = np.where(masks > 0)[0]  # 保存所有可以选择的index的数值(长度小于原有的)
+        self._registered_func_fragment = []
 
     def __len__(self):
         return len(self.index)
 
+    def register_imgs_hook(self, func):
+        self._registered_func_fragment.append(func)
+
     def __getitem__(self, idx):
         idxs = self.index[idx]  # 获取index 避开长度不够的地方
         if isinstance(idxs, Iterable):
-            returns = []
-            for idx in idxs:
-                imgs = []
-                targets = []
-                for i in range(self.len):
-                    img, target = super().__getitem__(idx)
-                    imgs.append(img)
-                    targets.append(target)
-                returns.append((imgs, targets))
-            return returns    
+            raise RuntimeError("fragment dataset can't use slice operation.")
         else:
             idx = idxs
             imgs = []
             targets = []
-            for i in range(self.len):
+            for i in range(self.len): 
                 img, target = super().__getitem__(idx)
                 imgs.append(img)
                 targets.append(target)
+            for func in self._registered_func_fragment:
+                func(imgs, targets)
             return imgs, targets
 
 
 
 def collate_to_list(batch):
     return list(zip(*batch))
+
+
 
 class CropAnns:
     def __init__(self, name=[]):
@@ -367,6 +366,20 @@ def build_KTTIFragmentDataset(label_path, img_path):
 
 # %%
 if __name__ =='__main__':
-    ds = build_KTTIDataset(partial={'behind': 0.7})
-    train_dl = DataLoader(ds, batch_size=3, shuffle=True, collate_fn=collate_to_list)
-    print(next(iter(train_dl)))
+    import matplotlib.pyplot as plt
+    # ds = build_KTTIDataset(partial={'behind': 0.7})
+    ds = build_KTTIFragmentDataset(
+        label_path=Path(r"E:\KTTI\training\label_02"),
+        img_path=Path(r"E:\KTTI\trackong_image\training\image_02")
+    )
+    # train_dl = DataLoader(ds, batch_size=1, shuffle=True, collate_fn=collate_to_list_fragment)
+#%%
+
+# def show_imgs(imgs, targets):
+#     fig, axs = plt.subplots(1, 3, sharex='col', sharey='row')
+#     axs = axs.flatten()
+#     for idx, img in enumerate(imgs):
+#         axs[idx].imshow(img)
+#     fig.show()
+# ds.register_imgs_hook(show_imgs)
+# imgs, targes = next(iter(train_dl))
