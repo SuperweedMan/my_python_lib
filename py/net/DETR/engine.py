@@ -9,7 +9,7 @@ from typing import Iterable
 
 import torch
 
-import models.util.misc as utils
+import py.net.DETR.models.util.misc as utils
 
 
 def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
@@ -24,10 +24,11 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
     print_freq = 10
 
     for samples, targets in metric_logger.log_every(data_loader, print_freq, header):
-        samples = samples.to(device)
+        # samples = samples.to(device)
+        samples = [sample.to(device) for sample in samples]
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
-
-        outputs = model(samples)
+        
+        outputs, *_  = model(samples)
         loss_dict = criterion(outputs, targets)
         weight_dict = criterion.weight_dict
         losses = sum(loss_dict[k] * weight_dict[k] for k in loss_dict.keys() if k in weight_dict)
@@ -48,7 +49,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             sys.exit(1)
 
         optimizer.zero_grad()
-        losses.backward()
+        losses.backward(retain_graph = True)
         if max_norm > 0:
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm)
         optimizer.step()
