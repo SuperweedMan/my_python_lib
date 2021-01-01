@@ -4,13 +4,14 @@ import torch.nn.functional as F
 import torchvision
 import easydict
 from torch import nn
-from datasets.coco import build as build_coco
+# from datasets.coco import build as build_coco
 from models.util import misc as utils
 from config import CONFIG
 from torch.utils.data import DataLoader, DistributedSampler
 from engine import train_one_epoch,eval_one_epoch
 
 import models
+from pathlib import Path
 from PIL import Image
 import os
 import matplotlib.pyplot as plt
@@ -41,10 +42,12 @@ lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, CONFIG.lr_drop)
 #%%
 # 数据集
 split_position = 0.7
-dataset_train = KTTIdataset.build_KTTIDataset(partial={'front': split_position})
+dataset_train = KTTIdataset.build_KTTIDataset(partial={'front': split_position}, label_path=Path(r"E:\KTTI\training\label_02"),
+            img_path=Path(r"E:\KTTI\trackong_image\training\image_02"))
 data_loader_train =DataLoader(dataset_train, batch_size=8, shuffle=True, collate_fn=utils.collate_fn, num_workers=CONFIG.num_workers)
 
-dataset_eval = KTTIdataset.build_KTTIDataset(partial={'behind': split_position})
+dataset_eval = KTTIdataset.build_KTTIDataset(partial={'behind': split_position}, label_path=Path(r"E:\KTTI\training\label_02"),
+            img_path=Path(r"E:\KTTI\trackong_image\training\image_02"))
 data_loader_eval =DataLoader(dataset_eval, batch_size=8, shuffle=True, collate_fn=utils.collate_fn, num_workers=CONFIG.num_workers)
 
 #%%
@@ -63,7 +66,7 @@ data_loader_eval =DataLoader(dataset_eval, batch_size=8, shuffle=True, collate_f
 #     out_features=3,  # ['Car', 'Pedestrian'] + background
 #     bias=True
 # )
-checkpoint = torch.load('./KITTI_epoch_13', map_location= lambda storage, loc : storage.cuda())
+checkpoint = torch.load(Path(r"E:\kitti_parameter\KTTI_epoch_19"), map_location= lambda storage, loc : storage.cuda())
 model.load_state_dict(checkpoint['model'])
 optimizer.load_state_dict(checkpoint['optimizer'])
 lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
