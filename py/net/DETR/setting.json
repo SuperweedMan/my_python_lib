@@ -18,7 +18,7 @@
     "eos_coef": 0.1,
     "device": "cuda",
 
-    "aux_loss": true, 
+    "aux_loss": false, 
     "backbone": "resnet50", 
     "batch_size": 1,
     "bbox_loss_coef": 5,
