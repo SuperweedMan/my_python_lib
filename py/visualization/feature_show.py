@@ -23,7 +23,7 @@ class FeatureMap:
         assert isinstance(name, str)
         self.temp_name = name
         def hook(module, input, output):
-            self.features[name] = output.detach().clone()
+            self.features[name] = output.detach().clone() # 仅仅进行数值的复制
         return hook
 
     def keep_handle(self, handle: torch.utils.hooks.RemovableHandle):
@@ -63,7 +63,7 @@ class AttentionMap(FeatureMap):
         assert isinstance(name, str)
         self.temp_name = name
         def hook(module, input, output):
-            self.features[name] = output[1].detach().clone()
+            self.features[name] = output[1].detach().clone()  # 仅仅进行数值的复制
         return hook
     
     def heatmap(self, name: str, ax: matplotlib.axes._axes.Axes, bs: int, indexs: Tuple[int,int], img_shape: Tuple[int, int], **kwargs):
