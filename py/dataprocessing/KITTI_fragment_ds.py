@@ -14,12 +14,13 @@ import pandas
 from collections import Iterable
 from pathlib import Path
 import random
+import tqdm 
 
 from py.dataprocessing.KTTIdataset import KTTIDataset
 from py.visualization.box_ops import boxes_value_to_percentage
 
 #%%
-class KTTIFragmentDataset(KTTIDataset):
+class KTTIFragmentDataset:
     """
     创建一个输出KITTI片段的数据集
     inputs:
@@ -31,15 +32,15 @@ class KTTIFragmentDataset(KTTIDataset):
         img_target_trans：对输出进行转化
     """
     def __init__(
-        self, path, img_path, len, partial={}, exclusive_raws={}, exclusive_cats={}, img_transformer=None, target_transformer=None, im_target_trans=None
+        self, path, img_path, len, partial={}, exclusive_raws={}, exclusive_cats={}, im_target_trans=None
     ):
+        self.ds = KTTIDataset(path, img_path, partial={}, return_frame=True, exclusive_raws=exclusive_raws, 
+                        exclusive_cats=exclusive_cats)
         self.len = len
-        super().__init__(path, img_path, partial={}, return_frame=True, exclusive_raws=exclusive_raws, 
-                        exclusive_cats=exclusive_cats, img_transformer=img_transformer, 
-                        target_transformer=target_transformer, im_target_trans=im_target_trans)
-        self._registered_func_fragment = []
-        masks = [np.ones(len, dtype=np.int) for len in self.lens]
-        if self.len > 1:
+        self.__im_tar_transformer = im_target_trans
+        # self._registered_func_fragment = []
+        masks = [np.ones(len, dtype=np.int) for len in self.ds.lens]
+        if self.len > 1:  # 计算出可以使用的 index 避开不够长的
             for mask in masks:
                 mask[-(self.len - 1):] = 0 
         masks = np.concatenate(masks, axis=0)    
@@ -49,8 +50,8 @@ class KTTIFragmentDataset(KTTIDataset):
     def __len__(self):
         return len(self.index) - 1
 
-    def register_imgs_hook(self, func):
-        self._registered_func_fragment.append(func)
+    # def register_imgs_hook(self, func):
+    #     self._registered_func_fragment.append(func)
 
     def __getitem__(self, idx):
         idxs = self.index[idx]  # 获取index 避开长度不够的地方
@@ -61,11 +62,13 @@ class KTTIFragmentDataset(KTTIDataset):
             imgs = []
             targets = []
             for i in range(self.len): 
-                img, target = super().__getitem__(idx + i)
+                img, target = self.ds.__getitem__(idx + i)
                 imgs.append(img)
                 targets.append(target)
-            for func in self._registered_func_fragment:
-                func(imgs, targets)
+            # for func in self._registered_func_fragment:
+            #     func(imgs, targets)
+            if self.__im_tar_transformer is not None:
+                imgs, targets = self.__im_tar_transformer(imgs, targets)
             return imgs, targets
 
 class FragmentDL:
@@ -92,6 +95,8 @@ class FragmentDL:
 
 #%%
 if __name__ == '__main__':
+    import time
+    from tqdm import tqdm
     ds = KTTIFragmentDataset(
             path=Path(r"E:\KTTI\training\label_02"),
             img_path=Path(r"E:\KTTI\trackong_image\training\image_02"),
@@ -99,5 +104,9 @@ if __name__ == '__main__':
             exclusive_raws={'track_id':[-1], 'type':['Misc', 'Cyclist', 'Person', 'Tram', 'Truck', 'Van']}, 
             exclusive_cats=['dimensions_0', 'dimensions_1', 'dimensions_2'],
         )
-    dl = FragmentDL(ds, shuffle=False)
-    # dl = DataLoader(ds, batch_size=1, shuffle=True, collate_fn=collate_to_list_fragment)
+#%%
+    dl = tqdm(FragmentDL(ds, shuffle=False))
+    for imgs, targets in dl:
+        dl.set_description("说一些无关紧要的话")
+        # dl.set_description("不知道")
+        time.sleep(0.1)
