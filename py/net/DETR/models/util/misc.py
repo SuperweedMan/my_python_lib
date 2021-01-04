@@ -167,7 +167,7 @@ class MetricLogger(object):
             assert isinstance(v, (float, int))
             self.meters[k].update(v)
 
-    def __getattr__(self, attr):
+    def __getattr__(self, attr):  # 先在meter寻找，没有就在自身寻找，在没有就报错
         if attr in self.meters:
             return self.meters[attr]
         if attr in self.__dict__:
@@ -224,7 +224,7 @@ class MetricLogger(object):
             yield obj
             iter_time.update(time.time() - end)
             if i % print_freq == 0 or i == len(iterable) - 1:
-                eta_seconds = iter_time.global_avg * (len(iterable) - i)
+                eta_seconds = iter_time.global_avg * (len(iterable) - i)  # 总的需要花费的时间
                 eta_string = str(datetime.timedelta(seconds=int(eta_seconds)))
                 if torch.cuda.is_available():
                     print(log_msg.format(
