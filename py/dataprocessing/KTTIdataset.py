@@ -20,7 +20,7 @@ from torchvision import transforms
 import pandas
 from collections import Iterable
 from pathlib import Path
-
+import copy
 from py.visualization.box_ops import boxes_value_to_percentage
 
 #%%
@@ -131,6 +131,7 @@ class KTTIDataset(Dataset):
                     w, h =img.size
                     target['size'] = (h, w)
                     target['orig_size'] = (h, w)
+                    # target['fragment'] = int(target['fragment'])
                     if self.target_transformer is not None:
                         target = self.target_transformer(target)
                     if self.img_transformer is not None:
@@ -138,7 +139,7 @@ class KTTIDataset(Dataset):
                     if self.im_target_trans is not None:
                         img, target = self.im_target_trans(img, target)
                     returns.append((img, target))
-                return returns
+                return copy.deepcopy(returns)
             else:
                 target = targets
                 img_path = os.path.join(self.imgs_path, target['fragment'], '{:0>6d}'.format(target['frame']) + '.png')
@@ -149,13 +150,14 @@ class KTTIDataset(Dataset):
                 w, h =img.size
                 target['size'] = (h, w)
                 target['orig_size'] = (h, w)
+                # target['fragment'] = int(target['fragment'])
                 if self.target_transformer is not None:
                     target = self.target_transformer(target)
                 if self.img_transformer is not None:
                     img = self.img_transformer(img)
                 if self.im_target_trans is not None:
                     img, target = self.im_target_trans(img, target)
-                return img, target
+                return copy.deepcopy(img), copy.deepcopy(target)
         else:
             raise ValueError('The function to return a entire sequence is not yet implemented.')
 
