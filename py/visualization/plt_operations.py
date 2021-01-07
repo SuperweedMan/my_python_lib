@@ -1,4 +1,5 @@
 #%%
+import enum
 import matplotlib.pyplot as plt
 from matplotlib.axes._base import _AxesBase
 import numpy as np
@@ -21,37 +22,75 @@ class AxesOperations:
     def heatmap(self, data: np.ndarray):
         im = self.axes.imshow(data, cmap=plt.cm.hot, interpolation='none')
         return im
+    
+    # def target_boxes(self, data: Dict[torch.Tensor], box_form:str, labels_str:List[str]=[], 
+    #                 box_percentage:Tuple[int, int]=None, edgecolor:str='green', linewidth:int=1, 
+    #                 fontsize:int=6, color:str='black', txt_box=dict(facecolor='g', joinstyle='round', alpha=0.6, lw=0, pad=0)):
+    #     """
+    #     输入的数据格式为{'boxes': [[...], [], []], 'labels': [...], 'track_id':[...]}
+    #     """
+    #     assert 'boxes' in data
+    #     assert 'labels' in data
+    #     assert 'track_id' in data
+    #     if not isinstance(data['boxes'], torch.Tensor):
+    #         data['boxes'] = torch.tensor(data['boxes'])
+    #         data['labels'] = torch.tensor(data['labels'])
+    #     if box_percentage is not None:  # 若输入的是百分比数据
+    #         data['boxes'] = box_ops.boxes_percentage_to_value(
+    #                 data['boxes'], box_percentage
+    #             )
+    #     data['boxes'] = torchvision.ops.box_convert(
+    #             data['boxes'], box_form, "xywh"
+    #         )  # boxes格式转换
+    #     for i, box in enumerate(data['boxes']):  # 将数据画出
+    #         rect = plt.Rectangle((box[0], box[1]), box[2], box[3], fill=False, edgecolor=edgecolor, linewidth=linewidth)
+    #         self.axes.add_patch(rect)
+    #         assert (len(data['pred_logits'][i]) == len(labels_str)) or len(labels_str) == 0 
+    #         txt_str = "{}:{:.3f}".format(
+    #                 labels_str[np.argmax(data['pred_logits'][i].detach().cpu().numpy())],
+    #                 float(data['pred_logits'][i].max().detach().cpu().numpy())
+    #             )
+    #         self.axes.text(rect.xy[0], rect.xy[1], txt_str,
+    #                 va='top', ha='left', fontsize=fontsize, color='black',
+    #                 bbox=txt_box)
+    #         if 'track_ids' in data:
+    #             # data['track_ids'] = sorted(data['track_ids'])
+    #             self.axes.text(rect.xy[0], rect.xy[1]+fontsize, str(data['track_ids'][i][1]),
+    #                 va='top', ha='left', fontsize=fontsize, color='black',
+    #                 bbox=txt_box)
 
-    def labeled_boxs(self, data: Dict[torch.Tensor, torch.Tensor], box_form:str, 
-        labels_str:str=[], box_percentage:Tuple[int, int]=None, additional_str:List[str]=[], edgecolor:str='green', linewidth:int=1, 
+
+    def labeled_boxs(self, data: Dict[torch.Tensor, torch.Tensor], box_str:str, logit_str:str, box_form:str, 
+        labels_str:str=None, box_percentage:Tuple[int, int]=None, additional_str:List[str]=[], edgecolor:str='green', linewidth:int=1, 
         fontsize:int=6, color:str='black', txt_box=dict(facecolor='g', joinstyle='round', alpha=0.6, lw=0, pad=0)):
         """
         输入的数据没有bs纬度，例：
-                            {'pred_logits':Tensor(4, 2), 'pred_boxes':Tensor(4, 4)}
+                            {logit_str:Tensor(4, 2), box_str:Tensor(4, 4)}
         """
-        assert 'pred_logits' in data
-        assert 'pred_boxes' in data
+        assert logit_str in data
+        assert box_str in data
         assert box_form in ['cxcywh', 'xyxy', 'xywh']
-        # data['pred_boxes'] = data['pred_boxes'][0]
+        # data[box_str] = data[box_str][0]
         if box_percentage is not None:  # 若输入的是百分比数据
-            data['pred_boxes'] = box_ops.boxes_percentage_to_value(
-                    data['pred_boxes'], box_percentage
+            data[box_str] = box_ops.boxes_percentage_to_value(
+                    data[box_str], box_percentage
                 )
-        data['pred_boxes'] = torchvision.ops.box_convert(
-                data['pred_boxes'], box_form, "xywh"
+        data[box_str] = torchvision.ops.box_convert(
+                data[box_str], box_form, "xywh"
             )  # boxes格式转换
-        boxes = data['pred_boxes']
+        boxes = data[box_str]
         for i, box in enumerate(boxes):  # 将数据画出
             rect = plt.Rectangle((box[0], box[1]), box[2], box[3], fill=False, edgecolor=edgecolor, linewidth=linewidth)
             self.axes.add_patch(rect)
-            assert (len(data['pred_logits'][i]) == len(labels_str)) or len(labels_str) == 0 
-            txt_str = "{}:{:.3f}".format(
-                    labels_str[np.argmax(data['pred_logits'][i].detach().cpu().numpy())],
-                    float(data['pred_logits'][i].max().detach().cpu().numpy())
-                )
-            self.axes.text(rect.xy[0], rect.xy[1], txt_str,
-                    va='top', ha='left', fontsize=fontsize, color='black',
-                    bbox=txt_box)
+            if labels_str is not None:
+                assert (len(data[logit_str][i]) == len(labels_str)) or len(labels_str) == 0 
+                txt_str = "{}:{:.3f}".format(
+                        labels_str[np.argmax(data[logit_str][i].detach().cpu().numpy())],
+                        float(data[logit_str][i].max().detach().cpu().numpy())
+                    )
+                self.axes.text(rect.xy[0], rect.xy[1], txt_str,
+                        va='top', ha='left', fontsize=fontsize, color='black',
+                        bbox=txt_box)
             if 'track_ids' in data:
                 # data['track_ids'] = sorted(data['track_ids'])
                 self.axes.text(rect.xy[0], rect.xy[1]+fontsize, str(data['track_ids'][i][1]),
