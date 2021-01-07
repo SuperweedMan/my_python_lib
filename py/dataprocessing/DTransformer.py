@@ -16,6 +16,7 @@ import random
 import cv2
 import io
 from PIL import Image
+from typing import List
 
 #%%
 class Compose(object):
@@ -110,13 +111,16 @@ class MotionPlur(object):
         return imgs, anns
 
 class Disturbance(object):
-    def __init__(self, motionplur, shelter) -> None:
-        self.pool = [motionplur, shelter]
+    def __init__(self, disturbances:List=[]) -> None:
+        self.pool = disturbances
 
     def __call__(self, imgs, anns):
-        dicturbance = random.sample(self.pool, 1)[0]
-        imgs, anns = dicturbance(imgs, anns)
-        return imgs, anns
+        if len(self.pool) == 0:
+            return imgs, anns
+        else:
+            dicturbance = random.sample(self.pool, 1)[0]
+            imgs, anns = dicturbance(imgs, anns)
+            return imgs, anns
 
 class ToPercentage(object):
     def __init__(self):
@@ -220,6 +224,7 @@ if __name__ == "__main__":
     import KITTI_fragment_ds
     from pathlib import Path
     ds = KITTI_fragment_ds.KTTIFragmentDataset(
+            # partial={'front': 0.1},
             path=Path(r"E:\KTTI\training\label_02"),
             img_path=Path(r"E:\KTTI\trackong_image\training\image_02"),
             len=3,
@@ -228,10 +233,10 @@ if __name__ == "__main__":
             im_target_trans=Compose([
                 CropAnns(['fragment', 'type']),
                 ToTensor(),
-                Disturbance(
+                Disturbance([
                     MotionPlur(degree=(10, 30)),
                     Shelter('xyxy', proportion=1.0, size=(0.5, 0.7))
-                    ),
+                ]),
                 ToPercentage(),
                 CovertBoxes('xyxy', 'cxcywh'),
             ])
@@ -242,9 +247,9 @@ if __name__ == "__main__":
     from torchvision import transforms
     toPIL = transforms.Compose([transforms.ToPILImage()])
     toTensor = transforms.Compose([transforms.ToTensor()])
-    dl = KITTI_fragment_ds.FragmentDL(ds, shuffle=True)
+    dl = KITTI_fragment_ds.FragmentDL(ds, shuffle=False)
     for imgs, targets in dl:
-        
+        plt.ion()
         img = make_grid(imgs, nrow=1, padding=0)
         channels, height, width = img.shape
         img = toPIL(img)
@@ -263,4 +268,4 @@ if __name__ == "__main__":
         plt.subplots_adjust(top=1, bottom=0, left=0, right=1, hspace=0, wspace=0)
         plt.margins(0, 0)
         # plt.savefig('./test.png')
-        break
+        plt.show()
