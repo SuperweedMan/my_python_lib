@@ -2,3 +2,5 @@
 *.gif
 *.ipynb
 KTTI_epoch_*
+.vscode/
+*.png
