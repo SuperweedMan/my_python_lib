@@ -34,7 +34,7 @@ class KTTIFragmentDataset:
     def __init__(
         self, path, img_path, len, partial={}, exclusive_raws={}, exclusive_cats={}, im_target_trans=None
     ):
-        self.ds = KTTIDataset(path, img_path, partial={}, return_frame=True, exclusive_raws=exclusive_raws, 
+        self.ds = KTTIDataset(path, img_path, partial=partial, return_frame=True, exclusive_raws=exclusive_raws, 
                         exclusive_cats=exclusive_cats)
         self.len = len
         self.__im_tar_transformer = im_target_trans
@@ -46,6 +46,8 @@ class KTTIFragmentDataset:
         masks = np.concatenate(masks, axis=0)    
         self.index = np.where(masks > 0)[0]  # 保存所有可以选择的index的数值(长度小于原有的)
             
+    def type_id_to_str(self):
+        return self.ds.type_id
 
     def __len__(self):
         return len(self.index) - 1
@@ -79,16 +81,21 @@ class FragmentDL:
 
     def __iter__(self):
         self.idx = 0
+        self.n = 0
         return self
 
     def __next__(self):
-        if self.shuffle:
-            idx =  random.randint(0, len(self.ds))
-            return self.ds[idx]
+        self.n += 1
+        if self.n < len(self):
+            if self.shuffle:
+                idx =  random.randint(0, len(self.ds))
+                return self.ds[idx]
+            else:
+                res = self.idx
+                self.idx += 1
+                return self.ds[res]
         else:
-            res = self.idx
-            self.idx += 1
-            return self.ds[res]
+            raise StopIteration
     
     def __len__(self):
         return len(self.ds)
