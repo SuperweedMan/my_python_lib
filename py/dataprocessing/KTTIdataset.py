@@ -24,26 +24,23 @@ import copy
 from py.visualization.box_ops import boxes_value_to_percentage
 
 #%%
-def get_targets_from_files(targets_path, partial={}, exclusive_raws={}, exclusive_cats=[]):
+def get_targets_from_files(targets_path, partial=[None, None, None], exclusive_raws={}, exclusive_cats=[]):
+    assert len(partial) == 3  # 切片的start stop step
     if not os.path.exists(targets_path):
         raise ValueError('wrong path')
     all_targets = {}
     label_names = os.listdir(targets_path)
-    # 切片
-    if len(partial) != 0:
-        key, item = list(partial.items())[0]
-        if key in ("front", "behind"):
-            split_position = int(item * len(label_names))
-            if key == 'front': 
-                label_names = label_names[:split_position]
-            else:
-                label_names = label_names[split_position:]
-        else:
-            raise RuntimeError("error key name {}".format(key))
+
     for label_name in label_names: 
         # 读取txt文件并添加标签头
         column_name = ['frame', 'track_id', 'type', 'truncated', 'occluded', 'alpha', 'bbox_0', 'bbox_1', 'bbox_2', 'bbox_3', 'dimensions_0', 'dimensions_1', 'dimensions_2', 'location_0', 'location_1', 'location_2', 'ration_y']
         labels = pandas.read_csv(os.path.join(targets_path, label_name), sep=' ', names=column_name)
+        # 切片
+        raws_num = labels.shape[0]
+        
+        start = round(partial[0] * raws_num) if partial[0] is not None else None
+        end = round(partial[1] * raws_num) if partial[1] is not None else None
+        labels = labels[start:end:partial[2]]
         if len(exclusive_cats) != 0:
             labels = labels.drop(columns=exclusive_cats)  # 删除不需要的类别
         if len(exclusive_raws) != 0:
@@ -167,7 +164,7 @@ class KTTIDataset(Dataset):
 class KTTIFragmentDataset(KTTIDataset):
     def __init__(self, path, img_path, len, partial={}, exclusive_raws={}, exclusive_cats={}, img_transformer=None, target_transformer=None, im_target_trans=None):
         self.len = len
-        super().__init__(path, img_path, partial={}, return_frame=True, exclusive_raws=exclusive_raws, 
+        super().__init__(path, img_path, partial=partial, return_frame=True, exclusive_raws=exclusive_raws, 
                         exclusive_cats=exclusive_cats, img_transformer=img_transformer, 
                         target_transformer=target_transformer, im_target_trans=im_target_trans)
 
@@ -357,6 +354,7 @@ def build_KTTIFragmentDataset(label_path, img_path):
     ds = KTTIFragmentDataset(
         path=label_path, 
         img_path=img_path, 
+        partial={'front': 0.1},
         len=3,
         exclusive_raws={'track_id':[-1], 'type':['Misc', 'Cyclist', 'Person', 'Tram', 'Truck', 'Van']}, 
         exclusive_cats=['dimensions_0', 'dimensions_1', 'dimensions_2'],
@@ -374,7 +372,6 @@ if __name__ =='__main__':
         label_path=Path(r"E:\KTTI\training\label_02"),
         img_path=Path(r"E:\KTTI\trackong_image\training\image_02")
     )
-    # train_dl = DataLoader(ds, batch_size=1, shuffle=True, collate_fn=collate_to_list_fragment)
 #%%
 
 # def show_imgs(imgs, targets):
