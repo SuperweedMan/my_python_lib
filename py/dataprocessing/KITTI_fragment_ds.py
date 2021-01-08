@@ -1,7 +1,7 @@
 #%%
+from functools import partial
 from types import DynamicClassAttribute
 import torch
-import matplotlib.pyplot as plt
 from PIL import Image
 import numpy as np
 import torchvision.utils as utils
@@ -18,7 +18,6 @@ import tqdm
 
 from py.dataprocessing.KTTIdataset import KTTIDataset
 from py.visualization.box_ops import boxes_value_to_percentage
-
 #%%
 class KTTIFragmentDataset:
     """
@@ -108,12 +107,17 @@ if __name__ == '__main__':
             path=Path(r"E:\KTTI\training\label_02"),
             img_path=Path(r"E:\KTTI\trackong_image\training\image_02"),
             len=3,
-            exclusive_raws={'track_id':[-1], 'type':['Misc', 'Cyclist', 'Person', 'Tram', 'Truck', 'Van']}, 
+            partial=[None, 0.1, None],
+            # exclusive_raws={'track_id':[-1], 'type':['Misc', 'Cyclist', 'Person', 'Tram', 'Truck', 'Van']}, 
+            exclusive_raws={'type':['Misc', 'Cyclist', 'Person', 'Tram', 'Truck', 'Van']},
             exclusive_cats=['dimensions_0', 'dimensions_1', 'dimensions_2'],
         )
 #%%
-    dl = tqdm(FragmentDL(ds, shuffle=False))
+    import matplotlib.pyplot as plt
+    dl = FragmentDL(ds, shuffle=False)
+    plt.ion()
     for imgs, targets in dl:
-        dl.set_description("说一些无关紧要的话")
-        # dl.set_description("不知道")
-        time.sleep(0.1)
+        fig, axes = plt.subplots(len(imgs), 1, sharex=True, sharey=True)
+        for idx, img in enumerate(imgs):
+            axes[idx].imshow(img, aspect="equal", interpolation='none')
+        plt.show()
