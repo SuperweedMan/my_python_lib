@@ -86,9 +86,10 @@ class Shelter(object):
 
 
 class MotionPlur(object):
-    def __init__(self, degree=(20, 50), angle=(20, 100)):
+    def __init__(self, degree=(20, 50), angle=(20, 100), specify_idx=None):
         self.degree = degree
         self.angle =angle
+        self.specify_idx = specify_idx
 
     def __call__(self, imgs, anns):
         assert isinstance(imgs, list) and isinstance(imgs[0], torch.Tensor)
@@ -96,7 +97,11 @@ class MotionPlur(object):
         # 抽取一帧
         degree = random.randint(*self.degree)
         angle = random.randint(*self.angle)
-        idx = random.randint(1, len(imgs) - 1)  # 不抽取第一张
+        if self.specify_idx is None:
+            idx = random.randint(1, len(imgs) - 1)  # 不抽取第一张
+        else:
+            idx = self.specify_idx
+            assert idx < len(imgs)
         img = imgs[idx].cpu().permute(1, 2, 0).numpy()
             # 这里生成任意角度的运动模糊kernel的矩阵， degree越大，模糊程度越高 
         M = cv2.getRotationMatrix2D((degree/2, degree/2), angle, 1) 
