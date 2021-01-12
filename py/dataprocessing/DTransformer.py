@@ -37,11 +37,12 @@ class Compose(object):
         return format_string
 
 class Shelter(object):
-    def __init__(self, box_from, size=(0.1, 0.5), proportion=0.5):
+    def __init__(self, box_from, size=(0.1, 0.5), proportion=0.5, specify_idx=None):
         assert box_from in ('xyxy', 'cxcywh', 'xywh')
         self.orig_form = box_from
         self.size = size
         self.proportion = proportion
+        self.specify_idx = specify_idx
         self.toPIL = transforms.Compose([transforms.ToPILImage()])
         self.toTensor = transforms.Compose([transforms.ToTensor()])
 
@@ -50,6 +51,11 @@ class Shelter(object):
         assert imgs[0].ndim == 3
         img_size =  tuple(( i / 100. for i in tuple(imgs[0].shape[-2:])))
         idx = random.randint(1, len(imgs) - 1)  # 不抽取第一张
+        if self.specify_idx is None:
+            idx = random.randint(1, len(imgs) - 1)  # 不抽取第一张
+        else:
+            idx = self.specify_idx
+            assert idx < len(imgs)
         fig, ax = plt.subplots()
         ax.imshow(self.toPIL(imgs[idx]), aspect="equal", interpolation='none')
         proportion = round(self.proportion * len(anns[idx]['boxes']))
