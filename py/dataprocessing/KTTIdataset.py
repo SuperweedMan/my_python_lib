@@ -154,7 +154,9 @@ class KTTIDataset(Dataset):
                     img = self.img_transformer(img)
                 if self.im_target_trans is not None:
                     img, target = self.im_target_trans(img, target)
-                return copy.deepcopy(img), copy.deepcopy(target)
+                target = copy.deepcopy(target)
+                target['fragment'] = int(target['fragment'])
+                return copy.deepcopy(img), target
         else:
             raise ValueError('The function to return a entire sequence is not yet implemented.')
 
