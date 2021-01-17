@@ -6,10 +6,12 @@ import numpy as np
 import matplotlib
 from py.visualization import linegraph
 import matplotlib
+from matplotlib import cm
 import torch
 import torchvision
 from py.visualization import box_ops
 from typing import List, Dict, Tuple
+
 
 #%%
 class AxesOperations:
@@ -61,8 +63,8 @@ class AxesOperations:
 
 
     def labeled_boxs(self, data: Dict[torch.Tensor, torch.Tensor], box_str:str, logit_str:str, box_form:str, 
-        labels_str:str=None, box_percentage:Tuple[int, int]=None, additional_str:List[str]=[], edgecolor:str='green', linewidth:int=1, 
-        fontsize:int=6, color:str='black', txt_box=dict(facecolor='g', joinstyle='round', alpha=0.6, lw=0, pad=0)):
+        labels_str:str=None, box_percentage:Tuple[int, int]=None, additional_str:List[str]=[], edgecolormap:matplotlib.colors.ListedColormap=cm.get_cmap(name='viridis'), 
+        linewidth:int=1, fontsize:int=6, color:str='black', txt_box=dict(facecolor='g', joinstyle='round', alpha=0.6, lw=0, pad=0)):
         """
         输入的数据没有bs纬度，例：
                             {logit_str:Tensor(4, 2), box_str:Tensor(4, 4)}
@@ -80,7 +82,7 @@ class AxesOperations:
             )  # boxes格式转换
         boxes = data[box_str]
         for i, box in enumerate(boxes):  # 将数据画出
-            rect = plt.Rectangle((box[0], box[1]), box[2], box[3], fill=False, edgecolor=edgecolor, linewidth=linewidth)
+            rect = plt.Rectangle((box[0], box[1]), box[2], box[3], fill=False, edgecolor=edgecolormap(data[logit_str][i].max().item()), linewidth=linewidth)
             self.axes.add_patch(rect)
             if labels_str is not None:
                 assert (len(data[logit_str][i]) == len(labels_str)) or len(labels_str) == 0 
